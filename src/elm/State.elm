@@ -89,8 +89,12 @@ getPortfolio =
         { method = "GET"
         , headers =
             [ Http.header "Access-Control-Allow-Origin" "*"
+
+            --, Http.header "x-access-token" "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1MjM4NjgxNDAsImV4cCI6MTUyMzg3NTM0MH0.F7zuxQJ1KPF9_fpXm1kTpFRiuOJcA3U5BXfNY1KB02Q"
             ]
-        , url = "https://pawelpaszki-ent-dev.herokuapp.com/api/users/5a7f2f5bce6979001451b00d"
+
+        --, url = "https://pawelpaszki-ent-dev.herokuapp.com/api/users/5a7f2f5bce6979001451b00d"
+        , url = "http://localhost:4040/api/users/5ad4959081fe7e0974b77c34"
         , body = Http.emptyBody
         , expect = Http.expectJson Portfolio.decodeUser
         , timeout = Nothing

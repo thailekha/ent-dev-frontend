@@ -135,6 +135,13 @@ tryGetCashHolding user =
             0
 
 
+totalQuantityOfHolding : Holding -> Int
+totalQuantityOfHolding holding =
+    holding.shares
+        |> List.map (\s -> s.quantity)
+        |> List.foldl (+) 0
+
+
 decodeUser : Decoder User
 decodeUser =
     map2 User

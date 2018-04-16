@@ -2,7 +2,6 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var path = require('path');
 var server = express();
-var request = require('request');
 var proxy = require('express-http-proxy');
 var cors = require('cors');
 
