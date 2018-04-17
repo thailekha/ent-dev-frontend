@@ -1,10 +1,8 @@
 module Views exposing (view)
 
 import Html exposing (..)
-import Html.Events exposing (onClick, on)
+import Html.Events exposing (onClick, onInput)
 import Html.Attributes exposing (..)
-import Debug
-import Round
 import RemoteData exposing (WebData)
 import Components.Portfolio as Portfolio
 import State exposing (..)
@@ -27,7 +25,10 @@ view model =
                 text "Loading..."
 
             RemoteData.Success p ->
-                portfolioView model p.user
+                div [] 
+                    [ sellView model p.user
+                    , portfolioView model p.user
+                    ]
 
             RemoteData.Failure error ->
                 text (toString error)
@@ -76,156 +77,22 @@ portfolioView model portfolio =
             ]
 
 
-holdingView : Model -> Portfolio.Holding -> List (Html Msg)
-holdingView model holding =
-    let
-        rows =
-            holding.shares
-                |> List.map
-                    (\share ->
-                        case model.livePriceWebData of
-                            RemoteData.Success _ ->
-                                case (Portfolio.getFullShare holding share model.livePrice) of
-                                    Ok fullShare ->
-                                        fullShareView fullShare
+sellView : Model -> Portfolio.Portfolio -> Html Msg
+sellView model p =
+    case model.livePriceWebData of
+        RemoteData.Success _ ->
+            div [] 
+                [ input [ type_ "text", placeholder "Symbol", onInput Input_Selling_Symbol ] []
+                , input [ type_ "text", placeholder "Quantity", onInput Input_Selling_Quantity ] []
+                , button [ 
+                    if Portfolio.validSellStockQuery p model.input_Selling_Symbol model.input_Selling_Quantity then
+                        onClick SellStock
+                    else
+                        disabled True
+                    ] 
+                    [ text "Sell" ]
+                ]
 
-                                    Err err ->
-                                        Debug.log "cannot display fullshare" err
-                                            |> always (shareView holding share)
-
-                            _ ->
-                                shareView holding share
-                    )
-
-        totalRow =
-            [ tr [] <|
-                List.concat
-                    [ List.repeat 6 (td [] [ text "" ])
-                    , [ td []
-                            [ holding
-                                |> Portfolio.totalQuantityOfHolding
-                                |> toString
-                                |> text
-                            ]
-                      ]
-                    , List.repeat 5 (td [] [ text "" ])
-                    , [ let
-                            cummulativePercentage =
-                                holding.shares
-                                    |> List.map
-                                        (\share ->
-                                            case model.livePriceWebData of
-                                                RemoteData.Success _ ->
-                                                    case (Portfolio.getFullShare holding share model.livePrice) of
-                                                        Ok fullShare ->
-                                                            fullShare.detailGainOrLoss
-
-                                                        Err _ ->
-                                                            0
-
-                                                _ ->
-                                                    0
-                                        )
-                                    |> List.foldl (+) 0
-                        in
-                            td
-                                (gainLossCss cummulativePercentage)
-                                [ cummulativePercentage
-                                    |> Round.round 2
-                                    |> toString
-                                    |> text
-                                ]
-                      ]
-                    , List.repeat 2 (td [] [ text "" ])
-                    ]
-            ]
-    in
-        List.append rows totalRow
-
-
-shareView : Portfolio.Holding -> Portfolio.Share -> Html Msg
-shareView holding share =
-    tr []
-        [ td []
-            [ text holding.displayName ]
-        , td []
-            [ text holding.exchange ]
-        , td []
-            [ text holding.symbol ]
-        , td []
-            [ text (dateString share.dateIn) ]
-        , td []
-            [ (case share.dateOut of
-                Just date_out ->
-                    text (dateString date_out)
-
-                Nothing ->
-                    text ""
-              )
-            ]
-        , td []
-            [ text (toString share.quantity) ]
-        , td []
-            [ text "" ]
-        , td []
-            [ text "" ]
-        , td []
-            [ text (toString share.purchasePrice) ]
-        , td []
-            [ text "" ]
-        , td []
-            [ text "" ]
-        , td []
-            [ text "" ]
-        , td []
-            [ text "" ]
-        , td []
-            [ text "" ]
-        , td []
-            [ text "" ]
-        ]
-
-
-fullShareView : Portfolio.FullShare -> Html Msg
-fullShareView share =
-    tr []
-        [ td []
-            [ text share.displayName ]
-        , td []
-            [ text share.exchange ]
-        , td []
-            [ text share.symbol ]
-        , td []
-            [ text (dateString share.dateIn) ]
-        , td []
-            [ (case share.dateOut of
-                Just date_out ->
-                    text (dateString date_out)
-
-                Nothing ->
-                    text ""
-              )
-            ]
-        , td []
-            [ text (toString share.quantity) ]
-        , td []
-            [ text "" ]
-        , td []
-            [ text (toString share.cost) ]
-        , td []
-            [ text (toString share.purchasePrice) ]
-        , td []
-            [ text (toString share.price) ]
-        , td []
-            [ text (toString <| Round.round 2 share.value) ]
-        , td
-            (gainLossCss share.detailGainOrLoss)
-            [ text (toString <| Round.round 2 share.detailGainOrLoss) ]
-        , td []
-            [ text "" ]
-        , td
-            (gainLossCss share.percentageGainOrLoss)
-            [ text (toString <| Round.round 2 share.percentageGainOrLoss) ]
-        , td []
-            [ text (toString <| Round.round 2 share.sellingCost) ]
-        ]
+        _ ->
+            div [] []
+    

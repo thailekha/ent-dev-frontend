@@ -12,6 +12,8 @@ type alias Model =
     , livePriceWebData : WebData Value
     , livePrice : LiveData.Data
     , liveDataUrl : String
+    , input_Selling_Symbol : String
+    , input_Selling_Quantity : String
     }
 
 
@@ -21,6 +23,8 @@ init =
     , livePriceWebData = RemoteData.NotAsked
     , livePrice = LiveData.init
     , liveDataUrl = "/test?n=0"
+    , input_Selling_Symbol = ""
+    , input_Selling_Quantity = ""
     }
         ! []
 
@@ -31,6 +35,9 @@ type Msg
     | GetLivePrice
     | OnResponseLivePrice (WebData Value)
     | SetLiveDataUrl String
+    | Input_Selling_Symbol String
+    | Input_Selling_Quantity String
+    | SellStock
     | NoChange String
 
 
@@ -60,6 +67,18 @@ update msg model =
 
         SetLiveDataUrl url ->
             { model | liveDataUrl = url } ! []
+
+        Input_Selling_Symbol str ->
+            { model | input_Selling_Symbol = str } ! []
+
+
+        Input_Selling_Quantity str ->
+            { model | input_Selling_Quantity = str } ! []
+
+
+        SellStock ->
+            { model | portfolio = RemoteData.map (\p -> {p | user = Portfolio.sellStock p.user model.input_Selling_Symbol model.input_Selling_Quantity}) model.portfolio } ! []
+
 
         NoChange _ ->
             model ! []

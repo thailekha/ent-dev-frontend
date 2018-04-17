@@ -3,6 +3,7 @@ module Components.Portfolio exposing (..)
 import Json.Decode exposing (..)
 import Dict exposing (Dict)
 import Components.LiveData as LiveData
+import Date
 import Debug
 
 
@@ -27,7 +28,7 @@ type alias Holding =
 
 
 type alias Share =
-    { dateIn : String
+    { dateIn : Maybe String
     , dateOut : Maybe String
     , quantity : Int
     , purchasePrice : Float
@@ -51,7 +52,7 @@ type alias FullShare =
     { displayName : String
     , exchange : String
     , symbol : String
-    , dateIn : String
+    , dateIn : Maybe String
     , dateOut : Maybe String
     , quantity : Int
     , cost : Float
@@ -142,6 +143,65 @@ totalQuantityOfHolding holding =
         |> List.foldl (+) 0
 
 
+validSellStockQuery : Portfolio -> String -> String -> Bool
+validSellStockQuery portfolio symbol qty =
+    case String.toInt qty of
+        Ok quantity ->
+            let 
+                stocks = portfolio.holdings
+                            |> List.filter (\h -> h.symbol == symbol)
+
+                totalQuantityOfStock = stocks
+                            |> List.map totalQuantityOfHolding
+                            |> List.foldl (+) 0
+
+            in
+                totalQuantityOfStock > 0 && totalQuantityOfStock >= quantity
+        Err _ ->
+            False
+
+
+sortShare : Share -> Int
+sortShare s =
+    case s.dateIn of
+        Just date_in ->
+            case Date.fromString date_in of
+                Ok date ->
+                    Date.day date
+                Err _ ->
+                    -1
+        Nothing ->
+            -1
+
+
+sellStock : Portfolio -> String -> String -> Portfolio
+sellStock portfolio symbol qty =
+    case String.toInt qty of
+        Ok quantity ->
+            let 
+                stocks = portfolio.holdings
+                            |> List.filter (\h -> h.symbol == symbol)
+                            |> List.map (\h -> h.shares)
+                            |> List.concat
+                            |> List.sortBy sortShare
+                            |> List.foldl
+                                (\share ( toBeAddedToSold, remainInHoldings, remainQuantity ) ->
+                                    if remainQuantity == 0 then
+                                        ( toBeAddedToSold, share :: remainInHoldings, remainQuantity )
+                                    else if share.quantity <= remainQuantity then
+                                        ( share :: toBeAddedToSold, remainInHoldings, remainQuantity - share.quantity )
+                                    else
+                                        ( {share | quantity = remainQuantity} :: toBeAddedToSold, {share | quantity = share.quantity - remainQuantity} :: remainInHoldings, 0 )
+                                )
+                                ( [], [], quantity )
+                log = Debug.log "Sell result" (toString stocks)
+                        |> always stocks
+            in
+                portfolio
+        Err _ ->
+            portfolio
+
+
 decodeUser : Decoder User
 decodeUser =
     map2 User
@@ -178,7 +238,7 @@ decodeHolding =
 decodeShare : Decoder Share
 decodeShare =
     map4 Share
-        (field "dateIn" string)
+        (field "dateIn" (nullable string))
         (field "dateOut" (nullable string))
         (field "quantity" int)
         (field "purchasePrice" float)
