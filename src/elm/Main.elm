@@ -1,13 +1,14 @@
 module Main exposing (..)
 
-import Html exposing (program)
+import Html exposing (programWithFlags)
 import Views
 import State exposing (Msg, Model)
+import Json.Decode
 
 
-main : Program Never Model Msg
+main : Program (Maybe Json.Decode.Value) Model Msg
 main =
-    program
+    programWithFlags
         { init = State.init
         , view = Views.view
         , update = State.update

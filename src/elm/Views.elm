@@ -5,19 +5,34 @@ import Html.Events exposing (onClick, onInput)
 import Html.Attributes exposing (..)
 import RemoteData exposing (WebData)
 import Components.Portfolio as Portfolio
+import Components.Auth as Auth
 import State exposing (..)
 import ViewComponents exposing (..)
 
 
 view : Model -> Html Msg
 view model =
+    div [ class "container", style [ ( "margin-top", "30px" ), ( "text-align", "center" ) ] ]
+        [ case model.auth.authenticationState of
+            Auth.LoggedOut ->
+                div []
+                    [ loginForm model
+                    ]
+
+            Auth.LoggedIn creds ->
+                loggedinView model
+        ]
+
+
+loggedinView : Model -> Html Msg
+loggedinView model =
     div []
         [ h1 [] [ text "Investments Portfolio Application" ]
         , liveDataSelectBox
         , br [] []
         , button [ onClick GetPortfolio ] [ text "Fetch portfolio" ]
         , button [ onClick GetLivePrice ] [ text "Fetch live" ]
-        , case model.portfolio of
+        , case model.user of
             RemoteData.NotAsked ->
                 text "Portfolio not fetched ..."
 
@@ -25,9 +40,9 @@ view model =
                 text "Loading..."
 
             RemoteData.Success p ->
-                div [] 
-                    [ sellView model p.user
-                    , portfolioView model p.user
+                div []
+                    [ sellView model p.portfolio
+                    , portfolioView model p.portfolio
                     ]
 
             RemoteData.Failure error ->
@@ -69,7 +84,7 @@ portfolioView model portfolio =
                     [ [ tableHeadingsRow
                       , cashHoldingRow model
                       ]
-                    , List.concat <| List.map (holdingView model) portfolio.holdings
+                    , List.concat <| List.map (holdingView model) <| Portfolio.sortHoldings <| portfolio.holdings
 
                     --, List.concat <| List.map (holdingView model) portfolio.stocksSold
                     ]
@@ -81,18 +96,17 @@ sellView : Model -> Portfolio.Portfolio -> Html Msg
 sellView model p =
     case model.livePriceWebData of
         RemoteData.Success _ ->
-            div [] 
+            div []
                 [ input [ type_ "text", placeholder "Symbol", onInput Input_Selling_Symbol ] []
                 , input [ type_ "text", placeholder "Quantity", onInput Input_Selling_Quantity ] []
-                , button [ 
-                    if Portfolio.validSellStockQuery p model.input_Selling_Symbol model.input_Selling_Quantity then
+                , button
+                    [ if Portfolio.validSellStockQuery p model.input_Selling_Symbol model.input_Selling_Quantity then
                         onClick SellStock
-                    else
+                      else
                         disabled True
-                    ] 
+                    ]
                     [ text "Sell" ]
                 ]
 
         _ ->
             div [] []
-    

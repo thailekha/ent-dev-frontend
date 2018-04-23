@@ -1,7 +1,7 @@
 module ViewComponents exposing (..)
 
 import Html exposing (..)
-import Html.Events exposing (onClick, on)
+import Html.Events exposing (..)
 import Html.Attributes exposing (..)
 import Debug
 import Round
@@ -11,6 +11,31 @@ import Components.Portfolio as Portfolio
 import Components.LiveData as LiveData
 import State exposing (..)
 import Json.Decode as Decode
+
+
+loginForm : Model -> Html Msg
+loginForm model =
+    div []
+        [ case model.auth.credentialsWebdata of
+            RemoteData.NotAsked ->
+                text "Please login or signup"
+
+            RemoteData.Loading ->
+                text "Loading..."
+
+            RemoteData.Success p ->
+                text ""
+
+            RemoteData.Failure error ->
+                text (toString error)
+        , br [] []
+        , input [ type_ "text", placeholder "email", onInput Input_Login_Email ] []
+        , br [] []
+        , input [ type_ "password", placeholder "password", onInput Input_Login_Password ] []
+        , br [] []
+        , button [ onClick Login ] [ text "Login" ]
+        , button [ onClick Login ] [ text "Signup" ]
+        ]
 
 
 liveDataSelectBox : Html Msg
@@ -228,7 +253,6 @@ fullShareView share =
         ]
 
 
-
 tableHeadings : List String
 tableHeadings =
     [ "Description / Narrative", "Exchange", "Symbol", "Date In", "Date Out", "Qty", "Total Qty", "Cost", "Purchase Price", "Price", "Value", "Detail Gain / Loss", "Cumulative Gain/Loss", "% Gain/Loss", "Sell Costs" ]
@@ -252,7 +276,7 @@ maybeLivePrice response =
 
 tryGetCashHolding : Model -> Float
 tryGetCashHolding model =
-    case model.portfolio of
+    case model.user of
         RemoteData.Success p ->
             Portfolio.tryGetCashHolding p
 
