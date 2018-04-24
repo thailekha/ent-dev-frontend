@@ -8,6 +8,7 @@ import Components.Portfolio as Portfolio
 import Components.Auth as Auth
 import State exposing (..)
 import ViewComponents exposing (..)
+import Dict
 
 
 view : Model -> Html Msg
@@ -44,8 +45,11 @@ loggedinView model =
             RemoteData.Success p ->
                 div []
                     [ button [ onClick ResetPortfolio ] [ text "Reset Portfolio" ]
-                    , sellView model p.portfolio
                     , portfolioView model p.portfolio
+                    , hr [] []
+                    , sellView model p.portfolio
+                    , hr [] []
+                    , buyView model
                     ]
 
             RemoteData.Failure error ->
@@ -107,7 +111,8 @@ sellView model p =
     case model.livePriceWebData of
         RemoteData.Success _ ->
             div []
-                [ input [ type_ "text", placeholder "Symbol", onInput Input_Selling_Symbol ] []
+                [ h3 [] [ text "Sell stocks" ]
+                , input [ type_ "text", placeholder "Symbol", onInput Input_Selling_Symbol ] []
                 , input [ type_ "text", placeholder "Quantity", onInput Input_Selling_Quantity ] []
                 , button
                     [ if Portfolio.validSellStockQuery p model.input_Selling_Symbol model.input_Selling_Quantity then
@@ -117,6 +122,64 @@ sellView model p =
                     ]
                     [ text "Sell" ]
                 ]
+
+        _ ->
+            div [] []
+
+
+buyView : Model -> Html Msg
+buyView model =
+    case model.livePriceWebData of
+        RemoteData.Success _ ->
+            let
+                headingsRow =
+                    tr []
+                        [ th []
+                            [ text "Description" ]
+                        , th []
+                            [ text "Exchange" ]
+                        , th []
+                            [ text "Symbol" ]
+                        , th []
+                            [ text "Price" ]
+                        ]
+
+                stockRows =
+                    model.livePrice.exchange
+                        |> Dict.toList
+                        |> List.map
+                            (\( exchange, stocksDict ) ->
+                                stocksDict
+                                    |> Dict.toList
+                                    |> List.map
+                                        (\( symbol, stock ) ->
+                                            { description = stock.company
+                                            , exchange = exchange
+                                            , symbol = stock.symbol
+                                            , price = stock.price
+                                            }
+                                        )
+                                    |> List.sortBy .symbol
+                            )
+                        |> List.concat
+                        |> List.map
+                            (\stockItem ->
+                                tr []
+                                    [ td []
+                                        [ text stockItem.description ]
+                                    , td []
+                                        [ text stockItem.exchange ]
+                                    , td []
+                                        [ text stockItem.symbol ]
+                                    , td []
+                                        [ text stockItem.price ]
+                                    ]
+                            )
+            in
+                div []
+                    [ h3 [] [ text "Buy stocks" ]
+                    , table [ attribute "border" "1" ] (headingsRow :: stockRows)
+                    ]
 
         _ ->
             div [] []
