@@ -70,3 +70,30 @@ decodeItem =
         (field "company" string)
         (field "symbol" string)
         (field "change" string)
+
+
+stocks : Data -> List { description : String, exchange : String, price : Float, symbol : String }
+stocks data =
+    data.exchange
+        |> Dict.toList
+        |> List.map
+            (\( exchange, stocksDict ) ->
+                stocksDict
+                    |> Dict.toList
+                    |> List.map
+                        (\( symbol, stock ) ->
+                            { description = stock.company
+                            , exchange = exchange
+                            , symbol = stock.symbol
+                            , price =
+                                case String.toFloat stock.price of
+                                    Ok pr ->
+                                        pr
+
+                                    Err _ ->
+                                        0
+                            }
+                        )
+                    |> List.sortBy .symbol
+            )
+        |> List.concat

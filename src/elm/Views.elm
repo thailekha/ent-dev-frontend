@@ -6,9 +6,11 @@ import Html.Attributes exposing (..)
 import RemoteData exposing (WebData)
 import Components.Portfolio as Portfolio
 import Components.Auth as Auth
+import Components.LiveData as LiveData
 import State exposing (..)
 import ViewComponents exposing (..)
 import Dict
+import Array
 
 
 view : Model -> Html Msg
@@ -144,24 +146,12 @@ buyView model =
                             [ text "Price" ]
                         ]
 
+                stocks =
+                    model.livePrice
+                        |> LiveData.stocks
+
                 stockRows =
-                    model.livePrice.exchange
-                        |> Dict.toList
-                        |> List.map
-                            (\( exchange, stocksDict ) ->
-                                stocksDict
-                                    |> Dict.toList
-                                    |> List.map
-                                        (\( symbol, stock ) ->
-                                            { description = stock.company
-                                            , exchange = exchange
-                                            , symbol = stock.symbol
-                                            , price = stock.price
-                                            }
-                                        )
-                                    |> List.sortBy .symbol
-                            )
-                        |> List.concat
+                    stocks
                         |> List.map
                             (\stockItem ->
                                 tr []
@@ -172,12 +162,42 @@ buyView model =
                                     , td []
                                         [ text stockItem.symbol ]
                                     , td []
-                                        [ text stockItem.price ]
+                                        [ text <| toString <| stockItem.price ]
                                     ]
                             )
+
+                ( cost, canBuy ) =
+                    case
+                        (stocks
+                            |> List.filter (\s -> s.symbol == model.input_Buying_Symbol)
+                            |> Array.fromList
+                            |> Array.get 0
+                        )
+                    of
+                        Just s ->
+                            case String.toFloat model.input_Buying_Quantity of
+                                Ok q ->
+                                    ( s.price * q, True )
+
+                                Err _ ->
+                                    ( -1, False )
+
+                        Nothing ->
+                            ( -1, False )
             in
                 div []
                     [ h3 [] [ text "Buy stocks" ]
+                    , input [ type_ "text", placeholder "Symbol", onInput Input_Buying_Symbol ] []
+                    , input [ type_ "text", placeholder "Quantity", onInput Input_Buying_Quantity ] []
+                    , if canBuy then
+                        div []
+                            [ text <| "Cost: " ++ (toString cost)
+                            , br [] []
+                            , br [] []
+                            , button [ onClick BuyStock ] [ text "Buy" ]
+                            ]
+                      else
+                        div [] []
                     , table [ attribute "border" "1" ] (headingsRow :: stockRows)
                     ]
 

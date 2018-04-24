@@ -19,6 +19,8 @@ type alias Model =
     , liveDataUrl : String
     , input_Selling_Symbol : String
     , input_Selling_Quantity : String
+    , input_Buying_Symbol : String
+    , input_Buying_Quantity : String
     }
 
 
@@ -33,6 +35,8 @@ init config =
     , liveDataUrl = "/test?n=0"
     , input_Selling_Symbol = ""
     , input_Selling_Quantity = ""
+    , input_Buying_Symbol = ""
+    , input_Buying_Quantity = ""
     }
         ! []
 
@@ -51,6 +55,9 @@ type Msg
     | Input_Selling_Symbol String
     | Input_Selling_Quantity String
     | SellStock
+    | Input_Buying_Symbol String
+    | Input_Buying_Quantity String
+    | BuyStock
     | ResetPortfolio
     | NoChange String
 
@@ -117,6 +124,15 @@ update msg model =
 
         SellStock ->
             { model | user = RemoteData.map (\p -> { p | portfolio = Portfolio.sellStock p.portfolio model.input_Selling_Symbol model.input_Selling_Quantity }) model.user } ! []
+
+        Input_Buying_Symbol str ->
+            { model | input_Buying_Symbol = str } ! []
+
+        Input_Buying_Quantity str ->
+            { model | input_Buying_Quantity = str } ! []
+
+        BuyStock ->
+            model ! []
 
         ResetPortfolio ->
             model ! [ resetPortfolio model ]
