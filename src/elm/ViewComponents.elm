@@ -29,9 +29,9 @@ loginForm model =
             RemoteData.Failure error ->
                 text (toString error)
         , br [] []
-        , input [ type_ "text", placeholder "email", onInput Input_Login_Email ] []
+        , input [ type_ "text", placeholder "email", name "email", onInput Input_Login_Email ] []
         , br [] []
-        , input [ type_ "password", placeholder "password", onInput Input_Login_Password ] []
+        , input [ type_ "password", placeholder "password", name "password", onInput Input_Login_Password ] []
         , br [] []
         , button [ onClick Login ] [ text "Login" ]
         , button [ onClick Login ] [ text "Signup" ]

@@ -39,11 +39,12 @@ init config =
                         LoggedIn decodedCredentials
 
                     Err _ ->
-                        Debug.log "Cannot decode auth data from config" ""
+                        Debug.log "Cannot decode auth data from config" (toString config)
                             |> always LoggedOut
 
             Nothing ->
-                LoggedOut
+                Debug.log "No init config data" ""
+                    |> always LoggedOut
     , credentialsWebdata = RemoteData.NotAsked
     }
 

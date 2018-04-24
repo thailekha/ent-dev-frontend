@@ -1,4 +1,4 @@
-module State exposing (..)
+port module State exposing (..)
 
 import Http
 import RemoteData exposing (WebData)
@@ -42,6 +42,7 @@ type Msg
     | Input_Login_Password String
     | Login
     | OnResponseLogin (WebData Auth.Credentials)
+    | Logout
     | GetPortfolio
     | OnResponsePortfolio (WebData Portfolio.User)
     | GetLivePrice
@@ -66,7 +67,22 @@ update msg model =
             model ! [ requestLogin model ]
 
         OnResponseLogin webdata ->
-            { model | auth = Auth.updateCredentialsWebdata model.auth webdata } ! []
+            { model | auth = Auth.updateCredentialsWebdata model.auth webdata }
+                ! (case webdata of
+                    RemoteData.Success creds ->
+                        [ saveCreds creds ]
+
+                    _ ->
+                        []
+                  )
+
+        Logout ->
+            { model
+                | auth = Auth.init Nothing
+                , input_Login_Email = ""
+                , input_Login_Password = ""
+            }
+                ! [ logout () ]
 
         GetPortfolio ->
             ( { model | user = RemoteData.Loading }, getPortfolio model )
@@ -103,6 +119,12 @@ update msg model =
 
         NoChange _ ->
             model ! []
+
+
+port saveCreds : Auth.Credentials -> Cmd msg
+
+
+port logout : () -> Cmd msg
 
 
 requestLogin : Model -> Cmd Msg
@@ -166,15 +188,6 @@ getPortfolio model =
         |> Cmd.map OnResponsePortfolio
 
 
-
---TODO
---use pawel's api response to model holding
---sell holding
---routing
---remove holding without persistence
---login
-
-
 updatePortfolio : Portfolio.User -> Cmd Msg
 updatePortfolio user =
     Http.request
@@ -193,6 +206,12 @@ updatePortfolio user =
 
 
 
+--TODO
+--use pawel's api response to model holding
+--sell holding
+--routing
+--remove holding without persistence
+--login
 --type alias MessageResponse =
 --    { message: String }
 --decodeMessageResponse : Decode.Decoder MessageResponse

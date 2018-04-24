@@ -27,7 +27,8 @@ view model =
 loggedinView : Model -> Html Msg
 loggedinView model =
     div []
-        [ h1 [] [ text "Investments Portfolio Application" ]
+        [ button [ onClick Logout ] [ text "Logout" ]
+        , h1 [] [ text "Investments Portfolio Application" ]
         , liveDataSelectBox
         , br [] []
         , button [ onClick GetPortfolio ] [ text "Fetch portfolio" ]
@@ -79,14 +80,21 @@ portfolioView model portfolio =
         div []
             [ h3 (gainLossCss net) [ text ("Net Profit/Loss: " ++ (toString net)) ]
             , h5 [] [ text <| toString <| getTotal model portfolio.holdings ]
+            , h3 [] [ text "Holdings" ]
             , table [ attribute "border" "1" ]
                 (List.concat
                     [ [ tableHeadingsRow
                       , cashHoldingRow model
                       ]
                     , List.concat <| List.map (holdingView model) <| Portfolio.sortHoldings <| portfolio.holdings
-
-                    --, List.concat <| List.map (holdingView model) portfolio.stocksSold
+                    ]
+                )
+            , h3 [] [ text "Stock solds" ]
+            , table [ attribute "border" "1" ]
+                (List.concat
+                    [ [ tableHeadingsRow
+                      ]
+                    , List.concat <| List.map (holdingView model) portfolio.stocksSold
                     ]
                 )
             ]
