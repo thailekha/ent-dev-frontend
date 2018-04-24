@@ -51,6 +51,7 @@ type Msg
     | Input_Selling_Symbol String
     | Input_Selling_Quantity String
     | SellStock
+    | ResetPortfolio
     | NoChange String
 
 
@@ -117,6 +118,9 @@ update msg model =
         SellStock ->
             { model | user = RemoteData.map (\p -> { p | portfolio = Portfolio.sellStock p.portfolio model.input_Selling_Symbol model.input_Selling_Quantity }) model.user } ! []
 
+        ResetPortfolio ->
+            model ! [ resetPortfolio model ]
+
         NoChange _ ->
             model ! []
 
@@ -178,7 +182,7 @@ getPortfolio model =
             ]
 
         --, url = "https://pawelpaszki-ent-dev.herokuapp.com/api/users/5a7f2f5bce6979001451b00d"
-        , url = "http://localhost:4040/api/users/5add52c2090d910f9f20d685"
+        , url = "http://localhost:4040/api/users/" ++ (Auth.tryGetId model.auth)
         , body = Http.emptyBody
         , expect = Http.expectJson Portfolio.decodeUser
         , timeout = Nothing
@@ -186,6 +190,33 @@ getPortfolio model =
         }
         |> RemoteData.sendRequest
         |> Cmd.map OnResponsePortfolio
+
+
+resetPortfolio : Model -> Cmd Msg
+resetPortfolio model =
+    case model.user of
+        RemoteData.Success user ->
+            Http.request
+                { method = "PUT"
+                , headers =
+                    [ Http.header "Access-Control-Allow-Origin" "*"
+                    , Http.header "Authorization" ("Bearer " ++ (Auth.tryGetToken model.auth))
+
+                    --, Http.header "x-access-token" "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1MjM4NjgxNDAsImV4cCI6MTUyMzg3NTM0MH0.F7zuxQJ1KPF9_fpXm1kTpFRiuOJcA3U5BXfNY1KB02Q"
+                    ]
+
+                --, url = "https://pawelpaszki-ent-dev.herokuapp.com/api/users/5a7f2f5bce6979001451b00d"
+                , url = "http://localhost:4040/api/users/reset/" ++ (Auth.tryGetId model.auth)
+                , body = Http.jsonBody <| Portfolio.encodeUser user
+                , expect = Http.expectJson Portfolio.decodeUser
+                , timeout = Nothing
+                , withCredentials = False
+                }
+                |> RemoteData.sendRequest
+                |> Cmd.map OnResponsePortfolio
+
+        _ ->
+            Cmd.none
 
 
 updatePortfolio : Portfolio.User -> Cmd Msg

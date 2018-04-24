@@ -72,3 +72,13 @@ tryGetToken model =
 
         LoggedOut ->
             ""
+
+
+tryGetId : Model -> String
+tryGetId model =
+    case model.authenticationState of
+        LoggedIn creds ->
+            creds.userId
+
+        LoggedOut ->
+            ""

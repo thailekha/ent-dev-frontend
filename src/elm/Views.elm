@@ -33,6 +33,7 @@ loggedinView model =
         , br [] []
         , button [ onClick GetPortfolio ] [ text "Fetch portfolio" ]
         , button [ onClick GetLivePrice ] [ text "Fetch live" ]
+        , br [] []
         , case model.user of
             RemoteData.NotAsked ->
                 text "Portfolio not fetched ..."
@@ -42,7 +43,8 @@ loggedinView model =
 
             RemoteData.Success p ->
                 div []
-                    [ sellView model p.portfolio
+                    [ button [ onClick ResetPortfolio ] [ text "Reset Portfolio" ]
+                    , sellView model p.portfolio
                     , portfolioView model p.portfolio
                     ]
 

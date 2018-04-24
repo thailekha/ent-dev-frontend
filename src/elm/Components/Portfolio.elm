@@ -235,7 +235,46 @@ sortShare s =
         Just date_in ->
             case Date.fromString date_in of
                 Ok date ->
-                    Date.day date
+                    let
+                        monthNo =
+                            case (Date.month date) of
+                                Date.Jan ->
+                                    1
+
+                                Date.Feb ->
+                                    2
+
+                                Date.Mar ->
+                                    3
+
+                                Date.Apr ->
+                                    4
+
+                                Date.May ->
+                                    5
+
+                                Date.Jun ->
+                                    6
+
+                                Date.Jul ->
+                                    7
+
+                                Date.Aug ->
+                                    8
+
+                                Date.Sep ->
+                                    9
+
+                                Date.Oct ->
+                                    10
+
+                                Date.Nov ->
+                                    11
+
+                                Date.Dec ->
+                                    12
+                    in
+                        (Date.day date) + (monthNo * 30) + ((Date.year date) * 365)
 
                 Err _ ->
                     -1
@@ -280,22 +319,28 @@ sellStock portfolio symbol qty =
                         in
                             { portfolio
                                 | holdings =
-                                    portfolio.holdings
-                                        |> List.filter (\h -> h.symbol /= symbol)
-                                        |> (::)
-                                            { shares = remain
-                                            , symbol = holding.symbol
-                                            , displayName = holding.displayName
-                                            , exchange = holding.exchange
-                                            }
+                                    if List.length remain > 0 then
+                                        portfolio.holdings
+                                            |> List.filter (\h -> h.symbol /= symbol)
+                                            |> (::)
+                                                { shares = remain
+                                                , symbol = holding.symbol
+                                                , displayName = holding.displayName
+                                                , exchange = holding.exchange
+                                                }
+                                    else
+                                        portfolio.holdings
                                 , stocksSold =
-                                    portfolio.stocksSold
-                                        |> (::)
-                                            { shares = sold
-                                            , symbol = holding.symbol
-                                            , displayName = holding.displayName
-                                            , exchange = holding.exchange
-                                            }
+                                    if List.length sold > 0 then
+                                        portfolio.stocksSold
+                                            |> (::)
+                                                { shares = sold
+                                                , symbol = holding.symbol
+                                                , displayName = holding.displayName
+                                                , exchange = holding.exchange
+                                                }
+                                    else
+                                        portfolio.stocksSold
                             }
 
         Err _ ->
