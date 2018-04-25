@@ -380,31 +380,35 @@ sellStock portfolio symbol qty =
                                     )
                                     ( [], [], quantity )
                     in
-                        { portfolio
-                            | holdings =
-                                if List.length remain > 0 then
-                                    portfolio.holdings
-                                        |> List.filter (\h -> h.symbol /= symbol)
-                                        |> (::)
-                                            { shares = remain
-                                            , symbol = holding.symbol
-                                            , displayName = holding.displayName
-                                            , exchange = holding.exchange
-                                            }
-                                else
-                                    portfolio.holdings
-                            , stocksSold =
-                                if List.length sold > 0 then
-                                    portfolio.stocksSold
-                                        |> (::)
-                                            { shares = sold
-                                            , symbol = holding.symbol
-                                            , displayName = holding.displayName
-                                            , exchange = holding.exchange
-                                            }
-                                else
-                                    portfolio.stocksSold
-                        }
+                        Debug.log "" ("Remain: " ++ toString remain ++ "; Sold: " ++ toString sold)
+                            |> always
+                                ({ portfolio
+                                    | holdings =
+                                        if List.length remain == 0 then
+                                            portfolio.holdings
+                                                |> List.filter (\h -> h.symbol /= symbol)
+                                        else
+                                            portfolio.holdings
+                                                |> List.filter (\h -> h.symbol /= symbol)
+                                                |> (::)
+                                                    { shares = remain
+                                                    , symbol = holding.symbol
+                                                    , displayName = holding.displayName
+                                                    , exchange = holding.exchange
+                                                    }
+                                    , stocksSold =
+                                        if List.length sold > 0 then
+                                            portfolio.stocksSold
+                                                |> (::)
+                                                    { shares = sold
+                                                    , symbol = holding.symbol
+                                                    , displayName = holding.displayName
+                                                    , exchange = holding.exchange
+                                                    }
+                                        else
+                                            portfolio.stocksSold
+                                 }
+                                )
 
         Err _ ->
             portfolio
