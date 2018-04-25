@@ -152,6 +152,7 @@ buyView model =
 
                 stockRows =
                     stocks
+                        |> List.filter (\s -> String.startsWith model.input_Buying_Symbol s.symbol)
                         |> List.map
                             (\stockItem ->
                                 tr []
