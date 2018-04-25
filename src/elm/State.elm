@@ -58,6 +58,7 @@ type Msg
     | Input_Selling_Quantity String
     | SellStock
     | SellAll
+    | RemoveShare Int String
     | Input_Buying_Symbol String
     | Input_Buying_Quantity String
     | BuyStock
@@ -146,6 +147,19 @@ update msg model =
                         (\u ->
                             { u
                                 | portfolio = Portfolio.sellAll u.portfolio
+                            }
+                        )
+                        model.user
+            }
+                ! []
+
+        RemoveShare index symbol ->
+            { model
+                | user =
+                    RemoteData.map
+                        (\u ->
+                            { u
+                                | portfolio = Portfolio.removeShare u.portfolio symbol index
                             }
                         )
                         model.user

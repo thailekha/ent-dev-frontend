@@ -351,64 +351,87 @@ sellStock : Portfolio -> String -> String -> Portfolio
 sellStock portfolio symbol qty =
     case String.toInt qty of
         Ok quantity ->
-            let
-                maybeHolding =
-                    portfolio.holdings
-                        |> List.filter (\h -> h.symbol == symbol)
-                        |> Array.fromList
-                        |> Array.get 0
-            in
-                case maybeHolding of
-                    Nothing ->
-                        portfolio
+            case
+                (portfolio.holdings
+                    |> List.filter (\h -> h.symbol == symbol)
+                    |> Array.fromList
+                    |> Array.get 0
+                )
+            of
+                Nothing ->
+                    portfolio
 
-                    Just holding ->
-                        let
-                            ( sold, remain, _ ) =
-                                portfolio.holdings
-                                    |> List.filter (\h -> h.symbol == symbol)
-                                    |> List.map (\h -> h.shares)
-                                    |> List.concat
-                                    |> List.sortBy sortShare
-                                    |> List.foldl
-                                        (\share ( toBeAddedToSold, remainInHoldings, remainQuantity ) ->
-                                            if remainQuantity == 0 then
-                                                ( toBeAddedToSold, share :: remainInHoldings, remainQuantity )
-                                            else if share.quantity <= remainQuantity then
-                                                ( share :: toBeAddedToSold, remainInHoldings, remainQuantity - share.quantity )
-                                            else
-                                                ( { share | quantity = remainQuantity } :: toBeAddedToSold, { share | quantity = share.quantity - remainQuantity } :: remainInHoldings, 0 )
-                                        )
-                                        ( [], [], quantity )
-                        in
-                            { portfolio
-                                | holdings =
-                                    if List.length remain > 0 then
-                                        portfolio.holdings
-                                            |> List.filter (\h -> h.symbol /= symbol)
-                                            |> (::)
-                                                { shares = remain
-                                                , symbol = holding.symbol
-                                                , displayName = holding.displayName
-                                                , exchange = holding.exchange
-                                                }
-                                    else
-                                        portfolio.holdings
-                                , stocksSold =
-                                    if List.length sold > 0 then
-                                        portfolio.stocksSold
-                                            |> (::)
-                                                { shares = sold
-                                                , symbol = holding.symbol
-                                                , displayName = holding.displayName
-                                                , exchange = holding.exchange
-                                                }
-                                    else
-                                        portfolio.stocksSold
-                            }
+                Just holding ->
+                    let
+                        ( sold, remain, _ ) =
+                            portfolio.holdings
+                                |> List.filter (\h -> h.symbol == symbol)
+                                |> List.map (\h -> h.shares)
+                                |> List.concat
+                                |> List.sortBy sortShare
+                                |> List.foldl
+                                    (\share ( toBeAddedToSold, remainInHoldings, remainQuantity ) ->
+                                        if remainQuantity == 0 then
+                                            ( toBeAddedToSold, share :: remainInHoldings, remainQuantity )
+                                        else if share.quantity <= remainQuantity then
+                                            ( share :: toBeAddedToSold, remainInHoldings, remainQuantity - share.quantity )
+                                        else
+                                            ( { share | quantity = remainQuantity } :: toBeAddedToSold, { share | quantity = share.quantity - remainQuantity } :: remainInHoldings, 0 )
+                                    )
+                                    ( [], [], quantity )
+                    in
+                        { portfolio
+                            | holdings =
+                                if List.length remain > 0 then
+                                    portfolio.holdings
+                                        |> List.filter (\h -> h.symbol /= symbol)
+                                        |> (::)
+                                            { shares = remain
+                                            , symbol = holding.symbol
+                                            , displayName = holding.displayName
+                                            , exchange = holding.exchange
+                                            }
+                                else
+                                    portfolio.holdings
+                            , stocksSold =
+                                if List.length sold > 0 then
+                                    portfolio.stocksSold
+                                        |> (::)
+                                            { shares = sold
+                                            , symbol = holding.symbol
+                                            , displayName = holding.displayName
+                                            , exchange = holding.exchange
+                                            }
+                                else
+                                    portfolio.stocksSold
+                        }
 
         Err _ ->
             portfolio
+
+
+removeShare : Portfolio -> String -> Int -> Portfolio
+removeShare portfolio symbol shareIndex =
+    { portfolio
+        | holdings =
+            portfolio.holdings
+                |> sortHoldings
+                |> List.map
+                    (\h ->
+                        if h.symbol /= symbol then
+                            h
+                        else
+                            { h
+                                | shares =
+                                    h.shares
+                                        |> Array.fromList
+                                        |> Array.toIndexedList
+                                        |> List.filter (\( index, _ ) -> index /= shareIndex)
+                                        |> List.map (\( _, s ) -> s)
+                            }
+                    )
+                |> List.filter (\h -> List.length h.shares > 0)
+    }
 
 
 sellAll : Portfolio -> Portfolio

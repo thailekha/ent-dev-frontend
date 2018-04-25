@@ -62,7 +62,8 @@ cashHoldingRow model =
     in
         tr []
             (List.concat <|
-                [ [ td []
+                [ [ td [] [] ]
+                , [ td []
                         [ text "Cash Holding" ]
                   ]
                 , List.repeat 4 (td [] [])
@@ -89,13 +90,13 @@ holdingView model holding =
     let
         rows =
             holding.shares
-                |> List.map
-                    (\share ->
+                |> List.indexedMap
+                    (\index share ->
                         case model.livePriceWebData of
                             RemoteData.Success _ ->
                                 case (Portfolio.getFullShare holding share model.livePrice) of
                                     Ok fullShare ->
-                                        fullShareView fullShare
+                                        fullShareView index fullShare
 
                                     Err err ->
                                         Debug.log "cannot display fullshare" err
@@ -201,10 +202,12 @@ shareView holding share =
         ]
 
 
-fullShareView : Portfolio.FullShare -> Html Msg
-fullShareView share =
+fullShareView : Int -> Portfolio.FullShare -> Html Msg
+fullShareView index share =
     tr []
         [ td []
+            [ button [ onClick (RemoveShare index share.symbol) ] [ text "X" ] ]
+        , td []
             [ text share.displayName ]
         , td []
             [ text share.exchange ]
@@ -288,6 +291,14 @@ tableHeadingsRow : Html msg
 tableHeadingsRow =
     tr []
         (tableHeadings
+            |> List.map (\h -> th [] [ text h ])
+        )
+
+
+buyTableHeadingsRow : Html msg
+buyTableHeadingsRow =
+    tr []
+        (("" :: tableHeadings)
             |> List.map (\h -> th [] [ text h ])
         )
 

@@ -91,7 +91,7 @@ portfolioView model portfolio =
             , h3 [] [ text "Holdings" ]
             , table [ attribute "border" "1" ]
                 (List.concat
-                    [ [ tableHeadingsRow
+                    [ [ buyTableHeadingsRow
                       , cashHoldingRow model
                       ]
                     , List.concat <| List.map (holdingView model) <| Portfolio.sortHoldings <| portfolio.holdings
