@@ -7,6 +7,8 @@ import Components.LiveData as LiveData
 import Components.Auth as Auth
 import Json.Decode as Decode exposing (Value, value)
 import Json.Encode as Encode
+import Date
+import Task
 
 
 type alias Model =
@@ -58,6 +60,7 @@ type Msg
     | Input_Buying_Symbol String
     | Input_Buying_Quantity String
     | BuyStock
+    | ImportHolding Date.Date
     | ResetPortfolio
     | NoChange String
 
@@ -123,7 +126,17 @@ update msg model =
             { model | input_Selling_Quantity = str } ! []
 
         SellStock ->
-            { model | user = RemoteData.map (\p -> { p | portfolio = Portfolio.sellStock p.portfolio model.input_Selling_Symbol model.input_Selling_Quantity }) model.user } ! []
+            { model
+                | user =
+                    RemoteData.map
+                        (\u ->
+                            { u
+                                | portfolio = Portfolio.sellStock u.portfolio model.input_Selling_Symbol model.input_Selling_Quantity
+                            }
+                        )
+                        model.user
+            }
+                ! []
 
         Input_Buying_Symbol str ->
             { model | input_Buying_Symbol = str } ! []
@@ -132,7 +145,20 @@ update msg model =
             { model | input_Buying_Quantity = str } ! []
 
         BuyStock ->
-            model ! []
+            model ! [ Task.perform ImportHolding Date.now ]
+
+        ImportHolding date ->
+            { model
+                | user =
+                    RemoteData.map
+                        (\u ->
+                            { u
+                                | portfolio = Portfolio.buystock u.portfolio (LiveData.stocks model.livePrice) model.input_Buying_Symbol model.input_Buying_Quantity date
+                            }
+                        )
+                        model.user
+            }
+                ! []
 
         ResetPortfolio ->
             model ! [ resetPortfolio model ]
@@ -253,15 +279,4 @@ updatePortfolio user =
 
 
 
---TODO
---use pawel's api response to model holding
---sell holding
---routing
---remove holding without persistence
---login
---type alias MessageResponse =
---    { message: String }
---decodeMessageResponse : Decode.Decoder MessageResponse
---decodeMessageResponse =
---    Decode.map MessageResponse
---        (Decode.field "message" Decode.string)
+--need timestamp --> need the update function --> do it here

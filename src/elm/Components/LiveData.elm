@@ -19,6 +19,14 @@ type alias Item =
     }
 
 
+
+-- used for buying
+
+
+type alias Stock =
+    { description : String, exchange : String, price : Float, symbol : String }
+
+
 init : Data
 init =
     { exchange = Dict.empty
@@ -72,7 +80,7 @@ decodeItem =
         (field "change" string)
 
 
-stocks : Data -> List { description : String, exchange : String, price : Float, symbol : String }
+stocks : Data -> List Stock
 stocks data =
     data.exchange
         |> Dict.toList

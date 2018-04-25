@@ -335,7 +335,8 @@ dateString : String -> String
 dateString iso =
     case Date.fromISO8601 iso of
         Ok date ->
-            toString (Date.day date) ++ "/" ++ toString (Date.month date) ++ "/" ++ toString (Date.year date)
+            Debug.log "parsed" iso
+                |> always (toString (Date.day date) ++ "/" ++ toString (Date.month date) ++ "/" ++ toString (Date.year date))
 
         Err _ ->
             ""

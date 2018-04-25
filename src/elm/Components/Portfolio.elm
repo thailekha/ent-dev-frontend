@@ -4,7 +4,6 @@ import Json.Decode exposing (..)
 import Dict exposing (Dict)
 import Components.LiveData as LiveData
 import Date
-import Debug
 import Array
 import Json.Encode as Encode
 
@@ -229,58 +228,123 @@ validSellStockQuery portfolio symbol qty =
             False
 
 
+getMonthInt : Date.Date -> Int
+getMonthInt date =
+    case (Date.month date) of
+        Date.Jan ->
+            1
+
+        Date.Feb ->
+            2
+
+        Date.Mar ->
+            3
+
+        Date.Apr ->
+            4
+
+        Date.May ->
+            5
+
+        Date.Jun ->
+            6
+
+        Date.Jul ->
+            7
+
+        Date.Aug ->
+            8
+
+        Date.Sep ->
+            9
+
+        Date.Oct ->
+            10
+
+        Date.Nov ->
+            11
+
+        Date.Dec ->
+            12
+
+
 sortShare : Share -> Int
 sortShare s =
     case s.dateIn of
         Just date_in ->
             case Date.fromString date_in of
                 Ok date ->
-                    let
-                        monthNo =
-                            case (Date.month date) of
-                                Date.Jan ->
-                                    1
-
-                                Date.Feb ->
-                                    2
-
-                                Date.Mar ->
-                                    3
-
-                                Date.Apr ->
-                                    4
-
-                                Date.May ->
-                                    5
-
-                                Date.Jun ->
-                                    6
-
-                                Date.Jul ->
-                                    7
-
-                                Date.Aug ->
-                                    8
-
-                                Date.Sep ->
-                                    9
-
-                                Date.Oct ->
-                                    10
-
-                                Date.Nov ->
-                                    11
-
-                                Date.Dec ->
-                                    12
-                    in
-                        (Date.day date) + (monthNo * 30) + ((Date.year date) * 365)
+                    (Date.day date) + ((getMonthInt date) * 30) + ((Date.year date) * 365)
 
                 Err _ ->
                     -1
 
         Nothing ->
             -1
+
+
+buystock : Portfolio -> List LiveData.Stock -> String -> String -> Date.Date -> Portfolio
+buystock portfolio stocks symbol quantity currentDate =
+    case String.toInt quantity of
+        Ok qty ->
+            case
+                (stocks
+                    |> List.filter (\s -> s.symbol == symbol)
+                    |> Array.fromList
+                    |> Array.get 0
+                )
+            of
+                Just stock ->
+                    let
+                        dateString =
+                            (toString <| Date.year currentDate) ++ "-" ++ (toString <| getMonthInt currentDate) ++ "-" ++ (toString <| Date.day currentDate)
+
+                        shareToAdd =
+                            { dateIn = Just dateString
+                            , dateOut = Nothing
+                            , quantity = qty
+                            , purchasePrice = stock.price
+                            }
+                    in
+                        case
+                            (portfolio.holdings
+                                |> List.filter (\h -> h.symbol == symbol)
+                                |> Array.fromList
+                                |> Array.get 0
+                            )
+                        of
+                            Just _ ->
+                                { portfolio
+                                    | holdings =
+                                        List.map
+                                            (\h ->
+                                                if h.symbol == symbol then
+                                                    { h
+                                                        | shares = shareToAdd :: h.shares
+                                                    }
+                                                else
+                                                    h
+                                            )
+                                            portfolio.holdings
+                                }
+
+                            Nothing ->
+                                { portfolio
+                                    | holdings =
+                                        ({ shares = List.singleton shareToAdd
+                                         , symbol = stock.symbol
+                                         , displayName = stock.description
+                                         , exchange = stock.exchange
+                                         }
+                                        )
+                                            :: portfolio.holdings
+                                }
+
+                Nothing ->
+                    portfolio
+
+        Err _ ->
+            portfolio
 
 
 sellStock : Portfolio -> String -> String -> Portfolio
