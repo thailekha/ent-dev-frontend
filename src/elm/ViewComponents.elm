@@ -85,8 +85,8 @@ cashHoldingRow model =
             )
 
 
-holdingView : Model -> Portfolio.Holding -> List (Html Msg)
-holdingView model holding =
+holdingView : Bool -> Model -> Portfolio.Holding -> List (Html Msg)
+holdingView addRemoveButton model holding =
     let
         rows =
             holding.shares
@@ -96,7 +96,7 @@ holdingView model holding =
                             RemoteData.Success _ ->
                                 case (Portfolio.getFullShare holding share model.livePrice) of
                                     Ok fullShare ->
-                                        fullShareView index fullShare
+                                        fullShareView addRemoveButton index fullShare
 
                                     Err err ->
                                         Debug.log "cannot display fullshare" err
@@ -202,58 +202,62 @@ shareView holding share =
         ]
 
 
-fullShareView : Int -> Portfolio.FullShare -> Html Msg
-fullShareView index share =
-    tr []
-        [ td []
-            [ button [ onClick (RemoveShare index share.symbol) ] [ text "X" ] ]
-        , td []
-            [ text share.displayName ]
-        , td []
-            [ text share.exchange ]
-        , td []
-            [ text share.symbol ]
-        , td []
-            [ (case share.dateIn of
-                Just date_in ->
-                    text (dateString date_in)
+fullShareView : Bool -> Int -> Portfolio.FullShare -> Html Msg
+fullShareView addRemoveButton index share =
+    let
+        shareRow =
+            [ td []
+                [ text share.displayName ]
+            , td []
+                [ text share.exchange ]
+            , td []
+                [ text share.symbol ]
+            , td []
+                [ (case share.dateIn of
+                    Just date_in ->
+                        text (dateString date_in)
 
-                Nothing ->
-                    text ""
-              )
-            ]
-        , td []
-            [ (case share.dateOut of
-                Just date_out ->
-                    text (dateString date_out)
+                    Nothing ->
+                        text ""
+                  )
+                ]
+            , td []
+                [ (case share.dateOut of
+                    Just date_out ->
+                        text (dateString date_out)
 
-                Nothing ->
-                    text ""
-              )
+                    Nothing ->
+                        text ""
+                  )
+                ]
+            , td []
+                [ text (toString share.quantity) ]
+            , td []
+                [ text "" ]
+            , td []
+                [ text (toString share.cost) ]
+            , td []
+                [ text (toString share.purchasePrice) ]
+            , td []
+                [ text (toString share.price) ]
+            , td []
+                [ text (toString <| Round.round 2 share.value) ]
+            , td
+                (gainLossCss share.detailGainOrLoss)
+                [ text (toString <| Round.round 2 share.detailGainOrLoss) ]
+            , td []
+                [ text "" ]
+            , td
+                (gainLossCss share.percentageGainOrLoss)
+                [ text (toString <| Round.round 2 share.percentageGainOrLoss) ]
+            , td []
+                [ text (toString <| Round.round 2 share.sellingCost) ]
             ]
-        , td []
-            [ text (toString share.quantity) ]
-        , td []
-            [ text "" ]
-        , td []
-            [ text (toString share.cost) ]
-        , td []
-            [ text (toString share.purchasePrice) ]
-        , td []
-            [ text (toString share.price) ]
-        , td []
-            [ text (toString <| Round.round 2 share.value) ]
-        , td
-            (gainLossCss share.detailGainOrLoss)
-            [ text (toString <| Round.round 2 share.detailGainOrLoss) ]
-        , td []
-            [ text "" ]
-        , td
-            (gainLossCss share.percentageGainOrLoss)
-            [ text (toString <| Round.round 2 share.percentageGainOrLoss) ]
-        , td []
-            [ text (toString <| Round.round 2 share.sellingCost) ]
-        ]
+    in
+        if addRemoveButton then
+            tr [] ((td [] [ button [ onClick (RemoveShare index share.symbol) ] [ text "X" ] ]) :: shareRow)
+        else
+            tr [] shareRow
 
 
 tableHeadings : List String
