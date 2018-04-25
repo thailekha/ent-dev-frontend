@@ -411,6 +411,14 @@ sellStock portfolio symbol qty =
             portfolio
 
 
+sellAll : Portfolio -> Portfolio
+sellAll portfolio =
+    { portfolio
+        | holdings = []
+        , stocksSold = List.append portfolio.stocksSold portfolio.holdings
+    }
+
+
 decodeUser : Decoder User
 decodeUser =
     map2 User

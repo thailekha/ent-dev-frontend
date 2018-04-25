@@ -97,6 +97,7 @@ portfolioView model portfolio =
                     , List.concat <| List.map (holdingView model) <| Portfolio.sortHoldings <| portfolio.holdings
                     ]
                 )
+            , hr [] []
             , h3 [] [ text "Stock solds" ]
             , table [ attribute "border" "1" ]
                 (List.concat
@@ -114,6 +115,9 @@ sellView model p =
         RemoteData.Success _ ->
             div []
                 [ h3 [] [ text "Sell stocks" ]
+                , button [ onClick SellAll ] [ text "Liquidate all" ]
+                , br [] []
+                , br [] []
                 , input [ type_ "text", placeholder "Symbol", onInput Input_Selling_Symbol ] []
                 , input [ type_ "text", placeholder "Quantity", onInput Input_Selling_Quantity ] []
                 , button
