@@ -189,17 +189,20 @@ update msg model =
                 updatedModel ! [ updatePortfolio updatedModel ]
 
         SellAll ->
-            { model
-                | user =
-                    RemoteData.map
-                        (\u ->
-                            { u
-                                | portfolio = Portfolio.sellAll u.portfolio model.livePrice
-                            }
-                        )
-                        model.user
-            }
-                ! []
+            let
+                updatedModel =
+                    { model
+                        | user =
+                            RemoteData.map
+                                (\u ->
+                                    { u
+                                        | portfolio = Portfolio.sellAll u.portfolio model.livePrice
+                                    }
+                                )
+                                model.user
+                    }
+            in
+                updatedModel ! [ updatePortfolio updatedModel ]
 
         RemoveShare index symbol ->
             { model
@@ -224,17 +227,20 @@ update msg model =
             model ! [ Task.perform ImportHolding Date.now ]
 
         ImportHolding date ->
-            { model
-                | user =
-                    RemoteData.map
-                        (\u ->
-                            { u
-                                | portfolio = Portfolio.buystock u.portfolio (LiveData.stocks model.livePrice) model.input_Buying_Symbol model.input_Buying_Quantity date
-                            }
-                        )
-                        model.user
-            }
-                ! []
+            let
+                updatedModel =
+                    { model
+                        | user =
+                            RemoteData.map
+                                (\u ->
+                                    { u
+                                        | portfolio = Portfolio.buystock u.portfolio (LiveData.stocks model.livePrice) model.input_Buying_Symbol model.input_Buying_Quantity date
+                                    }
+                                )
+                                model.user
+                    }
+            in
+                updatedModel ! [ updatePortfolio updatedModel ]
 
         ResetPortfolio ->
             model ! [ resetPortfolio model ]
