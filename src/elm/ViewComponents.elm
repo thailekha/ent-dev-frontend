@@ -44,7 +44,7 @@ liveDataSelectBox =
         [ onChange SetLiveDataUrl
         , cssSelectBox
         ]
-        [ option [ value "/test?n=0", attribute "selected" ""] [ text "Reset Original" ]
+        [ option [ value "/test?n=0", attribute "selected" "" ] [ text "Reset Original" ]
         , option [ value "/test?n=1" ] [ text "case1 +10%" ]
         , option [ value "/test?n=2" ] [ text "case2 -10%" ]
         , option [ value "/test?n=3" ] [ text "case3 +20%" ]

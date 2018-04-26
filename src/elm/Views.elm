@@ -15,16 +15,32 @@ import Array
 
 view : Model -> Html Msg
 view model =
-    div [ class "container", style [ ( "margin-top", "30px" ), ( "text-align", "center" ) ] ]
-        [ case model.auth.authenticationState of
-            Auth.LoggedOut ->
-                div []
-                    [ loginForm model
-                    ]
+    let
+        elmInfo =
+            if String.contains "localhost" model.elmBackendUrl then
+                "Local Elm"
+            else
+                "Remote Elm"
 
-            Auth.LoggedIn creds ->
-                loggedinView model
-        ]
+        nodeInfo =
+            if String.contains "localhost" model.nodeBackendUrl then
+                "Local Node.js"
+            else
+                "Remote Node.js"
+    in
+        div []
+            [ p [] [ text <| "(" ++ elmInfo ++ "/" ++ nodeInfo ++ ")" ]
+            , div [ class "container", style [ ( "margin-top", "30px" ), ( "text-align", "center" ) ] ]
+                [ case model.auth.authenticationState of
+                    Auth.LoggedOut ->
+                        div []
+                            [ loginForm model
+                            ]
+
+                    Auth.LoggedIn creds ->
+                        loggedinView model
+                ]
+            ]
 
 
 loggedinView : Model -> Html Msg

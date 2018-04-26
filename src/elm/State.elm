@@ -5,14 +5,16 @@ import RemoteData exposing (WebData)
 import Components.Portfolio as Portfolio
 import Components.LiveData as LiveData
 import Components.Auth as Auth
-import Json.Decode as Decode exposing (Value, value)
+import Json.Decode as Decode exposing (Value, value, decodeValue, string, field)
 import Json.Encode as Encode
 import Date
 import Task
 
 
 type alias Model =
-    { auth : Auth.Model
+    { elmBackendUrl : String
+    , nodeBackendUrl : String
+    , auth : Auth.Model
     , input_Login_Email : String
     , input_Login_Password : String
     , user : WebData Portfolio.User
@@ -28,19 +30,54 @@ type alias Model =
 
 init : Maybe Value -> ( Model, Cmd Msg )
 init config =
-    { auth = Auth.init config
-    , input_Login_Email = ""
-    , input_Login_Password = ""
-    , user = RemoteData.NotAsked
-    , livePriceWebData = RemoteData.NotAsked
-    , livePrice = LiveData.init
-    , liveDataUrl = "/test?n=0"
-    , input_Selling_Symbol = ""
-    , input_Selling_Quantity = ""
-    , input_Buying_Symbol = ""
-    , input_Buying_Quantity = ""
-    }
-        ! []
+    let
+        defaultModel =
+            { elmBackendUrl = "http://localhost:5000"
+            , nodeBackendUrl = "http://localhost:4040"
+            , auth = Auth.init config
+            , input_Login_Email = ""
+            , input_Login_Password = ""
+            , user = RemoteData.NotAsked
+            , livePriceWebData = RemoteData.NotAsked
+            , livePrice = LiveData.init
+            , liveDataUrl = "/test?n=0"
+            , input_Selling_Symbol = ""
+            , input_Selling_Quantity = ""
+            , input_Buying_Symbol = ""
+            , input_Buying_Quantity = ""
+            }
+    in
+        case config of
+            Just initialData ->
+                let
+                    elmBackendUrl =
+                        case (decodeValue (field "elmBackendUrl" string) initialData) of
+                            Ok elmBackendUrl ->
+                                elmBackendUrl
+
+                            Err _ ->
+                                Debug.log "Cannot decode elmBackendUrl from config" config
+                                    |> always defaultModel.elmBackendUrl
+
+                    nodeBackendUrl =
+                        case (decodeValue (field "nodeBackendUrl" string) initialData) of
+                            Ok nodeBackendUrl ->
+                                nodeBackendUrl
+
+                            Err _ ->
+                                Debug.log "Cannot decode nodeBackendUrl from config" config
+                                    |> always defaultModel.nodeBackendUrl
+
+                    updatedModel =
+                        { defaultModel
+                            | elmBackendUrl = elmBackendUrl
+                            , nodeBackendUrl = nodeBackendUrl
+                        }
+                in
+                    updatedModel ! []
+
+            Nothing ->
+                defaultModel ! []
 
 
 type Msg
@@ -104,7 +141,7 @@ update msg model =
             { model | user = res } ! []
 
         GetLivePrice ->
-            ( { model | livePriceWebData = RemoteData.Loading }, getLivePrice model.liveDataUrl )
+            ( { model | livePriceWebData = RemoteData.Loading }, getLivePrice model model.liveDataUrl )
 
         OnResponseLivePrice response ->
             case response of
@@ -212,7 +249,7 @@ requestLogin model =
             , headers =
                 [ Http.header "Access-Control-Allow-Origin" "*"
                 ]
-            , url = "http://localhost:4040/api/auth/login"
+            , url = model.nodeBackendUrl ++ "/api/auth/login"
             , body = Http.jsonBody body
             , expect = Http.expectJson Auth.decodeCredentials
             , timeout = Nothing
@@ -222,15 +259,15 @@ requestLogin model =
             |> Cmd.map OnResponseLogin
 
 
-getLivePrice : String -> Cmd Msg
-getLivePrice url =
+getLivePrice : Model -> String -> Cmd Msg
+getLivePrice model url =
     Http.request
         { method = "GET"
         , headers =
             [ Http.header "Access-Control-Allow-Origin" "*"
             , Http.header "Access-Control-Allow-Methods" "GET"
             ]
-        , url = "http://localhost:5000/proxy/scrape" ++ url
+        , url = model.elmBackendUrl ++ "/proxy/scrape" ++ url
         , body = Http.emptyBody
         , expect = Http.expectJson value
         , timeout = Nothing
@@ -252,7 +289,7 @@ getPortfolio model =
             ]
 
         --, url = "https://pawelpaszki-ent-dev.herokuapp.com/api/users/5a7f2f5bce6979001451b00d"
-        , url = "http://localhost:4040/api/users/" ++ (Auth.tryGetId model.auth)
+        , url = model.nodeBackendUrl ++ "/api/users/" ++ (Auth.tryGetId model.auth)
         , body = Http.emptyBody
         , expect = Http.expectJson Portfolio.decodeUser
         , timeout = Nothing
@@ -276,7 +313,7 @@ resetPortfolio model =
                     ]
 
                 --, url = "https://pawelpaszki-ent-dev.herokuapp.com/api/users/5a7f2f5bce6979001451b00d"
-                , url = "http://localhost:4040/api/users/reset/" ++ (Auth.tryGetId model.auth)
+                , url = model.nodeBackendUrl ++ "/api/users/reset/" ++ (Auth.tryGetId model.auth)
                 , body = Http.jsonBody <| Portfolio.encodeUser user
                 , expect = Http.expectJson Portfolio.decodeUser
                 , timeout = Nothing
@@ -289,22 +326,20 @@ resetPortfolio model =
             Cmd.none
 
 
-updatePortfolio : Portfolio.User -> Cmd Msg
-updatePortfolio user =
-    Http.request
-        { method = "PUT"
-        , headers =
-            [ Http.header "Access-Control-Allow-Origin" "*"
-            ]
-        , url = "http://localhost:4040/api/users/5add52c2090d910f9f20d685"
-        , body = Http.jsonBody <| Portfolio.encodeUser user
-        , expect = Http.expectJson Portfolio.decodeUser
-        , timeout = Nothing
-        , withCredentials = False
-        }
-        |> RemoteData.sendRequest
-        |> Cmd.map OnResponsePortfolio
 
-
-
+--updatePortfolio : Portfolio.User -> Cmd Msg
+--updatePortfolio user =
+--    Http.request
+--        { method = "PUT"
+--        , headers =
+--            [ Http.header "Access-Control-Allow-Origin" "*"
+--            ]
+--        , url = model.nodeBackendUrl ++ "/api/users/5add52c2090d910f9f20d685"
+--        , body = Http.jsonBody <| Portfolio.encodeUser user
+--        , expect = Http.expectJson Portfolio.decodeUser
+--        , timeout = Nothing
+--        , withCredentials = False
+--        }
+--        |> RemoteData.sendRequest
+--        |> Cmd.map OnResponsePortfolio
 --need timestamp --> need the update function --> do it here

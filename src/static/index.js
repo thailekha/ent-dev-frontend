@@ -12,15 +12,26 @@ function resetLocalStorage() {
 
 function getStoredAuthData() {
   logLocalStorage();
+
+  // var initConfig = {
+  //   elmBackendUrl: 'http://localhost:5000',
+  //   nodeBackendUrl: 'http://localhost:4040',
+  // };
+
+  var initConfig = {
+    elmBackendUrl: 'https://ent-dev-frontend.herokuapp.com',
+    nodeBackendUrl: 'https://ent-dev-backend.herokuapp.com',
+  };
+
   var storedId = localStorage.getItem('_id');
   var storedToken = localStorage.getItem('token');
 
-  return storedId
-    && storedToken
-    ? ({
-      _id: storedId,
-      token: storedToken
-    }) : null;
+  if (storedId && storedToken) {
+    initConfig._id = storedId;
+    initConfig.token = storedToken;
+  }
+
+  return initConfig;
 }
 
 function setupElmPorts(elmApp) {
