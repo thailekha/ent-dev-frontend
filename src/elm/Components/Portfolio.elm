@@ -525,12 +525,14 @@ removeShare portfolio symbol shareIndex =
     }
 
 
-sellAll : Portfolio -> Portfolio
-sellAll portfolio =
-    { portfolio
-        | holdings = []
-        , stocksSold = List.append portfolio.stocksSold portfolio.holdings
-    }
+sellAll : Portfolio -> LiveData.Data -> Portfolio
+sellAll portfolio livedata =
+    List.foldl
+        (\holding updatedPortfolio ->
+            sellStock updatedPortfolio livedata holding.symbol (toString <| totalQuantityOfHolding holding)
+        )
+        portfolio
+        portfolio.holdings
 
 
 decodeUser : Decoder User

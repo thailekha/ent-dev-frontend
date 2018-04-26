@@ -146,7 +146,7 @@ update msg model =
                     RemoteData.map
                         (\u ->
                             { u
-                                | portfolio = Portfolio.sellAll u.portfolio
+                                | portfolio = Portfolio.sellAll u.portfolio model.livePrice
                             }
                         )
                         model.user

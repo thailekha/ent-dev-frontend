@@ -103,7 +103,7 @@ portfolioView model portfolio =
                 (List.concat
                     [ [ tableHeadingsRow
                       ]
-                    , List.concat <| List.map (holdingView model) portfolio.stocksSold
+                    , List.concat <| List.map (holdingView model) <| Portfolio.sortHoldings <| portfolio.stocksSold
                     ]
                 )
             ]
