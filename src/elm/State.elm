@@ -84,7 +84,8 @@ type Msg
     = Input_Login_Email String
     | Input_Login_Password String
     | Login
-    | OnResponseLogin (WebData Auth.Credentials)
+    | Signup
+    | OnResponseAuth (WebData Auth.Credentials)
     | Logout
     | GetPortfolio
     | OnResponsePortfolio (WebData Portfolio.User)
@@ -118,7 +119,10 @@ update msg model =
         Login ->
             model ! [ requestLogin model ]
 
-        OnResponseLogin webdata ->
+        Signup ->
+            model ! [ requestSignup model ]
+
+        OnResponseAuth webdata ->
             { model | auth = Auth.updateCredentialsWebdata model.auth webdata }
                 ! (case webdata of
                     RemoteData.Success creds ->
@@ -281,7 +285,28 @@ requestLogin model =
             , withCredentials = False
             }
             |> RemoteData.sendRequest
-            |> Cmd.map OnResponseLogin
+            |> Cmd.map OnResponseAuth
+
+
+requestSignup : Model -> Cmd Msg
+requestSignup model =
+    let
+        body =
+            Encode.object [ ( "email", Encode.string model.input_Login_Email ), ( "password", Encode.string model.input_Login_Password ) ]
+    in
+        Http.request
+            { method = "POST"
+            , headers =
+                [ Http.header "Access-Control-Allow-Origin" "*"
+                ]
+            , url = model.nodeBackendUrl ++ "/api/users"
+            , body = Http.jsonBody body
+            , expect = Http.expectJson Auth.decodeCredentials
+            , timeout = Nothing
+            , withCredentials = False
+            }
+            |> RemoteData.sendRequest
+            |> Cmd.map OnResponseAuth
 
 
 getLivePrice : Model -> String -> Cmd Msg

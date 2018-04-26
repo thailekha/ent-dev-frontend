@@ -34,7 +34,7 @@ loginForm model =
         , input [ type_ "password", placeholder "password", name "password", onInput Input_Login_Password ] []
         , br [] []
         , button [ onClick Login ] [ text "Login" ]
-        , button [ onClick Login ] [ text "Signup" ]
+        , button [ onClick Signup ] [ text "Signup" ]
         ]
 
 
