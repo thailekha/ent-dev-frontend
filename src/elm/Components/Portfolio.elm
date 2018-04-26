@@ -387,6 +387,13 @@ buystock portfolio stocks symbol quantity currentDate =
             portfolio
 
 
+multiplySellingCost : Share -> Float -> Share
+multiplySellingCost share toMultiply =
+    { share
+        | sellingCosts = Maybe.map (\s -> (toFloat share.quantity) * toMultiply) share.sellingCosts
+    }
+
+
 sellStock : Portfolio -> LiveData.Data -> String -> String -> Portfolio
 sellStock portfolio livedata symbol qty =
     case String.toInt qty of
@@ -446,20 +453,17 @@ sellStock portfolio livedata symbol qty =
                                                 sharesSold =
                                                     fullSharesSold |> List.map getShareFromFullShare
 
-                                                totalOriginalSellCost =
-                                                    List.foldl (+) 0 <| List.map (\s -> s.sellingCosts) <| fullSharesSold
-
                                                 totalValue =
                                                     List.foldl (+) 0 <| List.map (\s -> s.value) <| fullSharesSold
+
+                                                totalQuantity =
+                                                    List.foldl (+) 0 <| List.map (\s -> toFloat s.quantity) <| sharesSold
 
                                                 totalSellcost =
                                                     calculateSellcost totalValue
 
-                                                unitSellCost =
-                                                    totalSellcost / totalOriginalSellCost
-
                                                 recalculatedSellCostsSold =
-                                                    sharesSold |> List.map (\s -> { s | sellingCosts = Maybe.map (\sc -> sc * unitSellCost) s.sellingCosts })
+                                                    List.map (\s -> multiplySellingCost s (totalSellcost / totalQuantity)) sharesSold
                                             in
                                                 case
                                                     (portfolio.stocksSold
