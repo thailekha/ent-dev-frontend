@@ -84,8 +84,8 @@ cashHoldingRow model =
             )
 
 
-holdingView : Model -> Portfolio.Holding -> List (Html Msg)
-holdingView model holding =
+holdingView : Bool -> Model -> Portfolio.Holding -> List (Html Msg)
+holdingView addRemoveButton model holding =
     let
         rows =
             holding.shares
@@ -95,7 +95,7 @@ holdingView model holding =
                             RemoteData.Success _ ->
                                 case (Portfolio.getFullShare holding share model.livePrice) of
                                     Ok fullShare ->
-                                        fullShareView index fullShare
+                                        fullShareView addRemoveButton index fullShare
 
                                     Err err ->
                                         Debug.log "cannot display fullshare" err
@@ -201,12 +201,18 @@ shareView holding share =
         ]
 
 
-fullShareView : Int -> Portfolio.FullShare -> Html Msg
-fullShareView index share =
+fullShareView : Bool -> Int -> Portfolio.FullShare -> Html Msg
+fullShareView addRemoveButton index share =
     let
         shareRow =
             [ td []
-                [ button [ onClick (RemoveShare index share.symbol) ] [ text "X" ], text share.displayName ]
+                [ (if addRemoveButton then
+                    button [ onClick (RemoveShare index share.symbol) ] [ text "X" ]
+                   else
+                    text ""
+                  )
+                , text share.displayName
+                ]
             , td []
                 [ text share.exchange ]
             , td []

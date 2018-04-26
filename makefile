@@ -9,6 +9,7 @@ undeploy:
 	heroku apps:delete ent-dev-frontend --confirm ent-dev-frontend
 redeploy: undeploy deploy
 update:
+	npm run lint-elm
 	git add -u
 	git reset src/static/index.js
 	git status

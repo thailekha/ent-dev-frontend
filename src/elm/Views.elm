@@ -9,7 +9,6 @@ import Components.Auth as Auth
 import Components.LiveData as LiveData
 import State exposing (..)
 import ViewComponents exposing (..)
-import Dict
 import Array
 
 
@@ -110,7 +109,7 @@ portfolioView model portfolio =
                     [ [ tableHeadingsRow
                       , cashHoldingRow model
                       ]
-                    , List.concat <| List.map (holdingView model) <| Portfolio.sortHoldings <| portfolio.holdings
+                    , List.concat <| List.map (holdingView True model) <| Portfolio.sortHoldings <| portfolio.holdings
                     ]
                 )
             , hr [] []
@@ -119,7 +118,7 @@ portfolioView model portfolio =
                 (List.concat
                     [ [ tableHeadingsRow
                       ]
-                    , List.concat <| List.map (holdingView model) <| Portfolio.sortHoldings <| portfolio.stocksSold
+                    , List.concat <| List.map (holdingView False model) <| Portfolio.sortHoldings <| portfolio.stocksSold
                     ]
                 )
             ]
