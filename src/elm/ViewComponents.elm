@@ -44,12 +44,12 @@ liveDataSelectBox =
         [ onChange SetLiveDataUrl
         , cssSelectBox
         ]
-        [ option [ attribute "disabled" "", attribute "selected" "", value "" ] [ text "" ]
-        , option [ value "/test?n=0" ] [ text "Reset Original" ]
+        [ option [ value "/test?n=0", attribute "selected" ""] [ text "Reset Original" ]
         , option [ value "/test?n=1" ] [ text "case1 +10%" ]
         , option [ value "/test?n=2" ] [ text "case2 -10%" ]
         , option [ value "/test?n=3" ] [ text "case3 +20%" ]
         , option [ value "/test?n=4" ] [ text "case4 -20%" ]
+        , option [ value "/test?n=5" ] [ text "case5 +100%" ]
         , option [ value "/all" ] [ text "/all" ]
         ]
 
