@@ -165,17 +165,20 @@ update msg model =
             { model | input_Selling_Quantity = str } ! []
 
         SellStock ->
-            { model
-                | user =
-                    RemoteData.map
-                        (\u ->
-                            { u
-                                | portfolio = Portfolio.sellStock u.portfolio model.livePrice model.input_Selling_Symbol model.input_Selling_Quantity
-                            }
-                        )
-                        model.user
-            }
-                ! []
+            let
+                updatedModel =
+                    { model
+                        | user =
+                            RemoteData.map
+                                (\u ->
+                                    { u
+                                        | portfolio = Portfolio.sellStock u.portfolio model.livePrice model.input_Selling_Symbol model.input_Selling_Quantity
+                                    }
+                                )
+                                model.user
+                    }
+            in
+                updatedModel ! [ updatePortfolio updatedModel ]
 
         SellAll ->
             { model
@@ -284,11 +287,7 @@ getPortfolio model =
         , headers =
             [ Http.header "Access-Control-Allow-Origin" "*"
             , Http.header "Authorization" ("Bearer " ++ (Auth.tryGetToken model.auth))
-
-            --, Http.header "x-access-token" "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1MjM4NjgxNDAsImV4cCI6MTUyMzg3NTM0MH0.F7zuxQJ1KPF9_fpXm1kTpFRiuOJcA3U5BXfNY1KB02Q"
             ]
-
-        --, url = "https://pawelpaszki-ent-dev.herokuapp.com/api/users/5a7f2f5bce6979001451b00d"
         , url = model.nodeBackendUrl ++ "/api/users/" ++ (Auth.tryGetId model.auth)
         , body = Http.emptyBody
         , expect = Http.expectJson Portfolio.decodeUser
@@ -308,11 +307,7 @@ resetPortfolio model =
                 , headers =
                     [ Http.header "Access-Control-Allow-Origin" "*"
                     , Http.header "Authorization" ("Bearer " ++ (Auth.tryGetToken model.auth))
-
-                    --, Http.header "x-access-token" "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1MjM4NjgxNDAsImV4cCI6MTUyMzg3NTM0MH0.F7zuxQJ1KPF9_fpXm1kTpFRiuOJcA3U5BXfNY1KB02Q"
                     ]
-
-                --, url = "https://pawelpaszki-ent-dev.herokuapp.com/api/users/5a7f2f5bce6979001451b00d"
                 , url = model.nodeBackendUrl ++ "/api/users/reset/" ++ (Auth.tryGetId model.auth)
                 , body = Http.jsonBody <| Portfolio.encodeUser user
                 , expect = Http.expectJson Portfolio.decodeUser
@@ -326,20 +321,24 @@ resetPortfolio model =
             Cmd.none
 
 
+updatePortfolio : Model -> Cmd Msg
+updatePortfolio model =
+    case model.user of
+        RemoteData.Success user ->
+            Http.request
+                { method = "PUT"
+                , headers =
+                    [ Http.header "Access-Control-Allow-Origin" "*"
+                    , Http.header "Authorization" ("Bearer " ++ (Auth.tryGetToken model.auth))
+                    ]
+                , url = model.nodeBackendUrl ++ "/api/users/" ++ (Auth.tryGetId model.auth)
+                , body = Http.jsonBody <| Portfolio.encodeUser user
+                , expect = Http.expectJson Portfolio.decodeUser
+                , timeout = Nothing
+                , withCredentials = False
+                }
+                |> RemoteData.sendRequest
+                |> Cmd.map OnResponsePortfolio
 
---updatePortfolio : Portfolio.User -> Cmd Msg
---updatePortfolio user =
---    Http.request
---        { method = "PUT"
---        , headers =
---            [ Http.header "Access-Control-Allow-Origin" "*"
---            ]
---        , url = model.nodeBackendUrl ++ "/api/users/5add52c2090d910f9f20d685"
---        , body = Http.jsonBody <| Portfolio.encodeUser user
---        , expect = Http.expectJson Portfolio.decodeUser
---        , timeout = Nothing
---        , withCredentials = False
---        }
---        |> RemoteData.sendRequest
---        |> Cmd.map OnResponsePortfolio
---need timestamp --> need the update function --> do it here
+        _ ->
+            Cmd.none

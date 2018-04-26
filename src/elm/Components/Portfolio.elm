@@ -70,18 +70,18 @@ encodeShare share =
           )
         , ( "quantity", Encode.int share.quantity )
         , ( "purchasePrice", Encode.float share.purchasePrice )
-        , ( "sellingPrice"
-          , case share.sellingPrice of
-                Just sp ->
-                    Encode.float sp
-
-                Nothing ->
-                    Encode.null
-          )
         , ( "sellingCosts"
           , case share.sellingCosts of
                 Just sc ->
                     Encode.float sc
+
+                Nothing ->
+                    Encode.null
+          )
+        , ( "sellingPrice"
+          , case share.sellingPrice of
+                Just sp ->
+                    Encode.float sp
 
                 Nothing ->
                     Encode.null
@@ -575,5 +575,5 @@ decodeShare =
         (field "dateOut" (nullable string))
         (field "quantity" int)
         (field "purchasePrice" float)
-        (field "sellingPrice" (nullable float))
         (field "sellingCosts" (nullable float))
+        (field "sellingPrice" (nullable float))
