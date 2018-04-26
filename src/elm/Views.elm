@@ -50,7 +50,7 @@ loggedinView model =
         , liveDataSelectBox
         , br [] []
         , button [ onClick GetPortfolio ] [ text "Fetch portfolio" ]
-        , button [ onClick GetLivePrice ] [ text "Fetch live" ]
+        , button [ onClick GetLivePrice ] [ text "Call Price Scraper" ]
         , br [] []
         , case model.user of
             RemoteData.NotAsked ->
