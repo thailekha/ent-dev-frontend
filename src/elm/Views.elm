@@ -99,11 +99,23 @@ portfolioView model portfolio =
                     )
                 |> List.concat
                 |> List.foldl (+) 0
+
+        summary =
+            getTotal model portfolio.holdings
     in
         div []
             [ h3 (gainLossCss net) [ text ("Net Profit/Loss: " ++ (toString net)) ]
-            , h5 [] [ text <| toString <| getTotal model portfolio.holdings ]
-            , h3 [] [ text "Holdings" ]
+            , h4 [] [ text <| "Purchase Price Total: " ++ (toString summary.purchasePrice) ++ "  |  " ++ "Gross Present Value: " ++ (toString summary.gpv) ]
+            , h4 [] [ text <| "Total Sell Costs: " ++ (toString summary.sellCost) ++ "  |  " ++ "GPV after Sell Costs: " ++ (toString summary.gpvAfterSell) ]
+            , h4 (gainLossCss summary.net)
+                [ text <|
+                    (if summary.net < 0 then
+                        "Gross Loss: "
+                     else
+                        "Gross Profit: "
+                    )
+                        ++ (toString summary.net)
+                ]
             , table [ attribute "border" "1" ]
                 (List.concat
                     [ [ tableHeadingsRow
