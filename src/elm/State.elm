@@ -133,7 +133,7 @@ update msg model =
                     RemoteData.map
                         (\u ->
                             { u
-                                | portfolio = Portfolio.sellStock u.portfolio model.input_Selling_Symbol model.input_Selling_Quantity
+                                | portfolio = Portfolio.sellStock u.portfolio model.livePrice model.input_Selling_Symbol model.input_Selling_Quantity
                             }
                         )
                         model.user

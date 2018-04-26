@@ -91,10 +91,10 @@ portfolioView model portfolio =
             , h3 [] [ text "Holdings" ]
             , table [ attribute "border" "1" ]
                 (List.concat
-                    [ [ buyTableHeadingsRow
+                    [ [ tableHeadingsRow
                       , cashHoldingRow model
                       ]
-                    , List.concat <| List.map (holdingView True model) <| Portfolio.sortHoldings <| portfolio.holdings
+                    , List.concat <| List.map (holdingView model) <| Portfolio.sortHoldings <| portfolio.holdings
                     ]
                 )
             , hr [] []
@@ -103,7 +103,7 @@ portfolioView model portfolio =
                 (List.concat
                     [ [ tableHeadingsRow
                       ]
-                    , List.concat <| List.map (holdingView False model) portfolio.stocksSold
+                    , List.concat <| List.map (holdingView model) portfolio.stocksSold
                     ]
                 )
             ]

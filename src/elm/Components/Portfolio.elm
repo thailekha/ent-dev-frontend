@@ -33,6 +33,19 @@ type alias Share =
     , dateOut : Maybe String
     , quantity : Int
     , purchasePrice : Float
+    , sellingCosts : Maybe Float
+    , sellingPrice : Maybe Float
+    }
+
+
+constructShare : Maybe String -> Maybe String -> Int -> Float -> Maybe Float -> Maybe Float -> Share
+constructShare dateIn dateOut quantity purchasePrice sellingCosts sellingPrice =
+    { dateIn = dateIn
+    , dateOut = dateOut
+    , quantity = quantity
+    , purchasePrice = purchasePrice
+    , sellingCosts = sellingCosts
+    , sellingPrice = sellingPrice
     }
 
 
@@ -57,6 +70,22 @@ encodeShare share =
           )
         , ( "quantity", Encode.int share.quantity )
         , ( "purchasePrice", Encode.float share.purchasePrice )
+        , ( "sellingPrice"
+          , case share.sellingPrice of
+                Just sp ->
+                    Encode.float sp
+
+                Nothing ->
+                    Encode.null
+          )
+        , ( "sellingCosts"
+          , case share.sellingCosts of
+                Just sc ->
+                    Encode.float sc
+
+                Nothing ->
+                    Encode.null
+          )
         ]
 
 
@@ -119,7 +148,7 @@ type alias FullShare =
     , value : Float
     , detailGainOrLoss : Float
     , percentageGainOrLoss : Float
-    , sellingCost : Float
+    , sellingCosts : Float
     }
 
 
@@ -140,6 +169,19 @@ sortHoldings holdings =
         |> List.map (\h -> { h | shares = List.sortBy sortShare h.shares })
 
 
+calculateSellcost : Float -> Float
+calculateSellcost value =
+    if (value < 25000) then
+        if (value * 0.01 + 1.25 >= 25) then
+            value * 0.01 + 1.25
+        else
+            25 + 1.25
+    else if (25000 * 0.01 + 0.005 * (value - 25000) + 1.25 >= 25) then
+        25000 * 0.01 + 0.005 * (value - 25000) + 1.25
+    else
+        25 + 1.25
+
+
 getFullShare : Holding -> Share -> LiveData.Data -> Result String FullShare
 getFullShare holding share livedata =
     case
@@ -156,16 +198,13 @@ getFullShare holding share livedata =
                             ( (toFloat share.quantity) * price, (toFloat share.quantity) * share.purchasePrice )
                     in
                         let
-                            sellingCost =
-                                if (value < 25000) then
-                                    if (value * 0.01 + 1.25 >= 25) then
-                                        value * 0.01 + 1.25
-                                    else
-                                        25 + 1.25
-                                else if (25000 * 0.01 + 0.005 * (value - 25000) + 1.25 >= 25) then
-                                    25000 * 0.01 + 0.005 * (value - 25000) + 1.25
-                                else
-                                    25 + 1.25
+                            sellingCosts =
+                                case share.sellingCosts of
+                                    Just sc ->
+                                        sc
+
+                                    Nothing ->
+                                        calculateSellcost value
                         in
                             Ok
                                 ({ displayName = holding.displayName
@@ -178,9 +217,9 @@ getFullShare holding share livedata =
                                  , purchasePrice = share.purchasePrice
                                  , price = price
                                  , value = value
-                                 , detailGainOrLoss = value - cost - sellingCost
-                                 , percentageGainOrLoss = ((value - cost - sellingCost) / cost) * 100
-                                 , sellingCost = sellingCost
+                                 , detailGainOrLoss = value - cost - sellingCosts
+                                 , percentageGainOrLoss = ((value - cost - sellingCosts) / cost) * 100
+                                 , sellingCosts = sellingCosts
                                  }
                                 )
 
@@ -189,6 +228,11 @@ getFullShare holding share livedata =
 
         Nothing ->
             Err ("Cannot find " ++ holding.exchange ++ "/" ++ holding.symbol ++ " in live data")
+
+
+getShareFromFullShare : FullShare -> Share
+getShareFromFullShare fs =
+    constructShare fs.dateIn fs.dateOut fs.quantity fs.purchasePrice (Just fs.sellingCosts) (Just fs.price)
 
 
 tryGetCashHolding : User -> Float
@@ -300,11 +344,7 @@ buystock portfolio stocks symbol quantity currentDate =
                             (toString <| Date.year currentDate) ++ "-" ++ (toString <| getMonthInt currentDate) ++ "-" ++ (toString <| Date.day currentDate)
 
                         shareToAdd =
-                            { dateIn = Just dateString
-                            , dateOut = Nothing
-                            , quantity = qty
-                            , purchasePrice = stock.price
-                            }
+                            constructShare (Just dateString) Nothing qty stock.price Nothing Nothing
                     in
                         case
                             (portfolio.holdings
@@ -347,8 +387,8 @@ buystock portfolio stocks symbol quantity currentDate =
             portfolio
 
 
-sellStock : Portfolio -> String -> String -> Portfolio
-sellStock portfolio symbol qty =
+sellStock : Portfolio -> LiveData.Data -> String -> String -> Portfolio
+sellStock portfolio livedata symbol qty =
     case String.toInt qty of
         Ok quantity ->
             case
@@ -398,13 +438,56 @@ sellStock portfolio symbol qty =
                                                     }
                                     , stocksSold =
                                         if List.length sold > 0 then
-                                            portfolio.stocksSold
-                                                |> (::)
-                                                    { shares = sold
-                                                    , symbol = holding.symbol
-                                                    , displayName = holding.displayName
-                                                    , exchange = holding.exchange
-                                                    }
+                                            let
+                                                fullSharesSold =
+                                                    sold
+                                                        |> List.filterMap (\s -> getFullShare holding s livedata |> Result.toMaybe)
+
+                                                sharesSold =
+                                                    fullSharesSold |> List.map getShareFromFullShare
+
+                                                totalOriginalSellCost =
+                                                    List.foldl (+) 0 <| List.map (\s -> s.sellingCosts) <| fullSharesSold
+
+                                                totalValue =
+                                                    List.foldl (+) 0 <| List.map (\s -> s.value) <| fullSharesSold
+
+                                                totalSellcost =
+                                                    calculateSellcost totalValue
+
+                                                unitSellCost =
+                                                    totalSellcost / totalOriginalSellCost
+
+                                                recalculatedSellCostsSold =
+                                                    sharesSold |> List.map (\s -> { s | sellingCosts = Maybe.map (\sc -> sc * unitSellCost) s.sellingCosts })
+                                            in
+                                                case
+                                                    (portfolio.stocksSold
+                                                        |> List.filter (\h -> h.symbol == symbol)
+                                                        |> Array.fromList
+                                                        |> Array.get 0
+                                                    )
+                                                of
+                                                    Just ss ->
+                                                        portfolio.stocksSold
+                                                            |> List.map
+                                                                (\h ->
+                                                                    if h.symbol == symbol then
+                                                                        { h
+                                                                            | shares = List.append recalculatedSellCostsSold h.shares
+                                                                        }
+                                                                    else
+                                                                        h
+                                                                )
+
+                                                    Nothing ->
+                                                        portfolio.stocksSold
+                                                            |> (::)
+                                                                { shares = recalculatedSellCostsSold
+                                                                , symbol = holding.symbol
+                                                                , displayName = holding.displayName
+                                                                , exchange = holding.exchange
+                                                                }
                                         else
                                             portfolio.stocksSold
                                  }
@@ -481,8 +564,10 @@ decodeHolding =
 
 decodeShare : Decoder Share
 decodeShare =
-    map4 Share
+    map6 Share
         (field "dateIn" (nullable string))
         (field "dateOut" (nullable string))
         (field "quantity" int)
         (field "purchasePrice" float)
+        (field "sellingPrice" (nullable float))
+        (field "sellingCosts" (nullable float))

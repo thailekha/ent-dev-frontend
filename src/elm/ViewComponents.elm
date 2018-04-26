@@ -62,8 +62,7 @@ cashHoldingRow model =
     in
         tr []
             (List.concat <|
-                [ [ td [] [] ]
-                , [ td []
+                [ [ td []
                         [ text "Cash Holding" ]
                   ]
                 , List.repeat 4 (td [] [])
@@ -85,8 +84,8 @@ cashHoldingRow model =
             )
 
 
-holdingView : Bool -> Model -> Portfolio.Holding -> List (Html Msg)
-holdingView addRemoveButton model holding =
+holdingView : Model -> Portfolio.Holding -> List (Html Msg)
+holdingView model holding =
     let
         rows =
             holding.shares
@@ -96,7 +95,7 @@ holdingView addRemoveButton model holding =
                             RemoteData.Success _ ->
                                 case (Portfolio.getFullShare holding share model.livePrice) of
                                     Ok fullShare ->
-                                        fullShareView addRemoveButton index fullShare
+                                        fullShareView index fullShare
 
                                     Err err ->
                                         Debug.log "cannot display fullshare" err
@@ -202,12 +201,12 @@ shareView holding share =
         ]
 
 
-fullShareView : Bool -> Int -> Portfolio.FullShare -> Html Msg
-fullShareView addRemoveButton index share =
+fullShareView : Int -> Portfolio.FullShare -> Html Msg
+fullShareView index share =
     let
         shareRow =
             [ td []
-                [ text share.displayName ]
+                [ button [ onClick (RemoveShare index share.symbol) ] [ text "X" ], text share.displayName ]
             , td []
                 [ text share.exchange ]
             , td []
@@ -251,13 +250,10 @@ fullShareView addRemoveButton index share =
                 (gainLossCss share.percentageGainOrLoss)
                 [ text (toString <| Round.round 2 share.percentageGainOrLoss) ]
             , td []
-                [ text (toString <| Round.round 2 share.sellingCost) ]
+                [ text (toString <| Round.round 2 share.sellingCosts) ]
             ]
     in
-        if addRemoveButton then
-            tr [] ((td [] [ button [ onClick (RemoveShare index share.symbol) ] [ text "X" ] ]) :: shareRow)
-        else
-            tr [] shareRow
+        tr [] shareRow
 
 
 tableHeadings : List String
@@ -299,14 +295,6 @@ tableHeadingsRow =
         )
 
 
-buyTableHeadingsRow : Html msg
-buyTableHeadingsRow =
-    tr []
-        (("" :: tableHeadings)
-            |> List.map (\h -> th [] [ text h ])
-        )
-
-
 getTotal : Model -> List Portfolio.Holding -> Portfolio.Total
 getTotal model holdings =
     let
@@ -321,7 +309,7 @@ getTotal model holdings =
                                         RemoteData.Success _ ->
                                             case (Portfolio.getFullShare holding share model.livePrice) of
                                                 Ok fullShare ->
-                                                    ( fullShare.purchasePrice * (toFloat fullShare.quantity), fullShare.value, fullShare.sellingCost, fullShare.detailGainOrLoss )
+                                                    ( fullShare.purchasePrice * (toFloat fullShare.quantity), fullShare.value, fullShare.sellingCosts, fullShare.detailGainOrLoss )
 
                                                 Err _ ->
                                                     ( 0, 0, 0, 0 )
