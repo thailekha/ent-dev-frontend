@@ -131,6 +131,14 @@ update msg model =
                 | auth = Auth.init Nothing
                 , input_Login_Email = ""
                 , input_Login_Password = ""
+                , user = RemoteData.NotAsked
+                , livePriceWebData = RemoteData.NotAsked
+                , livePrice = LiveData.init
+                , liveDataUrl = "/test?n=0"
+                , input_Selling_Symbol = ""
+                , input_Selling_Quantity = ""
+                , input_Buying_Symbol = ""
+                , input_Buying_Quantity = ""
             }
                 ! [ logout () ]
 

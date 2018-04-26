@@ -8,3 +8,7 @@ undeploy:
 	git remote remove heroku
 	heroku apps:delete ent-dev-frontend --confirm ent-dev-frontend
 redeploy: undeploy deploy
+update:
+	git add -u
+	git reset src/static/index.js
+	git status
