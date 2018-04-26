@@ -16,10 +16,7 @@ server.use('/proxy', proxy('https://scraper601.herokuapp.com', {
     data = JSON.parse(proxyResData.toString('utf8'));
     if (data && data.coinranking && data.coinranking.data && data.coinranking.data.map) {
       data.coinranking.data = data.coinranking.data.map(function(d) {
-        if (d.change) {
-          console.log('Making sure that ', d.change, ' is a string');
-          d.change = d.change + "";
-        }
+        d.change = d.change + "";
         return d;
       });
     }
