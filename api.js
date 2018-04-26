@@ -11,7 +11,21 @@ server.use(bodyParser.json()); // support json encoded bodies
 server.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 server.use('/',express.static(path.join(__dirname, 'dist')));
 
-server.use('/proxy', proxy('https://scraper601.herokuapp.com'));
+server.use('/proxy', proxy('https://scraper601.herokuapp.com', {
+	userResDecorator: function(proxyRes, proxyResData, userReq, userRes) {
+    data = JSON.parse(proxyResData.toString('utf8'));
+    if (data && data.coinranking && data.coinranking.data && data.coinranking.data.map) {
+      data.coinranking.data = data.coinranking.data.map(function(d) {
+        if (d.change) {
+          console.log('Making sure that ', d.change, ' is a string');
+          d.change = d.change + "";
+        }
+        return d;
+      });
+    }
+    return JSON.stringify(data);
+  }
+}));
 
 server.listen(server.get('port'), function() {
   console.log('Node app is running at', server.get('port'));
