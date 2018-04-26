@@ -230,11 +230,6 @@ getFullShare holding share livedata =
             Err ("Cannot find " ++ holding.exchange ++ "/" ++ holding.symbol ++ " in live data")
 
 
-getShareFromFullShare : FullShare -> Share
-getShareFromFullShare fs =
-    constructShare fs.dateIn fs.dateOut fs.quantity fs.purchasePrice (Just fs.sellingCosts) (Just fs.price)
-
-
 tryGetCashHolding : User -> Float
 tryGetCashHolding user =
     case user.cashHolding of
@@ -394,8 +389,17 @@ multiplySellingCost share toMultiply =
     }
 
 
-sellStock : Portfolio -> LiveData.Data -> String -> String -> Portfolio
-sellStock portfolio livedata symbol qty =
+
+-- used for sellstock only
+
+
+getShareFromFullShare : String -> FullShare -> Share
+getShareFromFullShare currentDate fs =
+    constructShare fs.dateIn (Just currentDate) fs.quantity fs.purchasePrice (Just fs.sellingCosts) (Just fs.price)
+
+
+sellStock : Portfolio -> LiveData.Data -> String -> String -> Date.Date -> Portfolio
+sellStock portfolio livedata symbol qty currentDate =
     case String.toInt qty of
         Ok quantity ->
             case
@@ -446,12 +450,15 @@ sellStock portfolio livedata symbol qty =
                                     , stocksSold =
                                         if List.length sold > 0 then
                                             let
+                                                dateString =
+                                                    (toString <| Date.year currentDate) ++ "-" ++ (toString <| getMonthInt currentDate) ++ "-" ++ (toString <| Date.day currentDate)
+
                                                 fullSharesSold =
                                                     sold
                                                         |> List.filterMap (\s -> getFullShare holding s livedata |> Result.toMaybe)
 
                                                 sharesSold =
-                                                    fullSharesSold |> List.map getShareFromFullShare
+                                                    fullSharesSold |> List.map (getShareFromFullShare dateString)
 
                                                 totalValue =
                                                     List.foldl (+) 0 <| List.map (\s -> s.value) <| fullSharesSold
@@ -525,11 +532,11 @@ removeShare portfolio symbol shareIndex =
     }
 
 
-sellAll : Portfolio -> LiveData.Data -> Portfolio
-sellAll portfolio livedata =
+sellAll : Portfolio -> LiveData.Data -> Date.Date -> Portfolio
+sellAll portfolio livedata currentDate =
     List.foldl
         (\holding updatedPortfolio ->
-            sellStock updatedPortfolio livedata holding.symbol (toString <| totalQuantityOfHolding holding)
+            sellStock updatedPortfolio livedata holding.symbol (toString <| totalQuantityOfHolding holding) currentDate
         )
         portfolio
         portfolio.holdings

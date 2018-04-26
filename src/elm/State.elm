@@ -94,7 +94,9 @@ type Msg
     | Input_Selling_Symbol String
     | Input_Selling_Quantity String
     | SellStock
+    | ExportHolding Date.Date
     | SellAll
+    | ExportAllHoldings Date.Date
     | RemoveShare Int String
     | Input_Buying_Symbol String
     | Input_Buying_Quantity String
@@ -173,6 +175,9 @@ update msg model =
             { model | input_Selling_Quantity = str } ! []
 
         SellStock ->
+            model ! [ Task.perform ExportHolding Date.now ]
+
+        ExportHolding date ->
             let
                 updatedModel =
                     { model
@@ -180,7 +185,7 @@ update msg model =
                             RemoteData.map
                                 (\u ->
                                     { u
-                                        | portfolio = Portfolio.sellStock u.portfolio model.livePrice model.input_Selling_Symbol model.input_Selling_Quantity
+                                        | portfolio = Portfolio.sellStock u.portfolio model.livePrice model.input_Selling_Symbol model.input_Selling_Quantity date
                                     }
                                 )
                                 model.user
@@ -189,6 +194,9 @@ update msg model =
                 updatedModel ! [ updatePortfolio updatedModel ]
 
         SellAll ->
+            model ! [ Task.perform ExportAllHoldings Date.now ]
+
+        ExportAllHoldings date ->
             let
                 updatedModel =
                     { model
@@ -196,7 +204,7 @@ update msg model =
                             RemoteData.map
                                 (\u ->
                                     { u
-                                        | portfolio = Portfolio.sellAll u.portfolio model.livePrice
+                                        | portfolio = Portfolio.sellAll u.portfolio model.livePrice date
                                     }
                                 )
                                 model.user
